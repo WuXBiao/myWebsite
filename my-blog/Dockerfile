@@ -1,14 +1,18 @@
 # 构建阶段
-FROM node:20-alpine as build-stage
+FROM node:22-alpine as build-stage
 
 # 设置工作目录
 WORKDIR /app
 
+# 设置环境变量
+ENV NODE_ENV=production
+
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci --only=production=false
+# 清理 npm 缓存并安装依赖
+RUN npm cache clean --force && \
+    npm install
 
 # 复制项目文件
 COPY . .
