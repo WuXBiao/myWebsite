@@ -11,11 +11,16 @@ COPY package*.json ./
 RUN npm cache clean --force && \
     npm install
 
+# 调试：检查安装的包
+RUN ls -la node_modules/.bin/ && \
+    npm list vite && \
+    which vite || echo "vite not in PATH"
+
 # 复制项目文件
 COPY . .
 
 # 构建应用
-RUN npm run build
+RUN npx vite build
 
 # 生产阶段
 FROM nginx:stable-alpine as production-stage
