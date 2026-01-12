@@ -1,5 +1,5 @@
 # 构建阶段
-FROM node:18-alpine as build-stage
+FROM node:20-alpine as build-stage
 
 # 设置工作目录
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # 安装依赖
-RUN npm install
+RUN npm ci --only=production=false
 
 # 复制项目文件
 COPY . .
