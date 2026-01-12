@@ -1,0 +1,36 @@
+{
+  "name": "my-blog",
+  "private": true,
+  "version": "1.0.0",
+  "description": "个人博客网站，基于 Vue 3、Vite 和 Tailwind CSS",
+  "author": "Your Name",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "format": "prettier --write src/",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:deploy": "sh deploy.sh"
+  },
+  "dependencies": {
+    "@tailwindcss/typography": "^0.5.19",
+    "@vueuse/core": "^14.1.0",
+    "autoprefixer": "^10.4.23",
+    "axios": "^1.13.2",
+    "highlight.js": "^11.11.1",
+    "marked": "^17.0.1",
+    "pinia": "^2.3.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "vue": "^3.5.24",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.2.4"
+  }
+}
