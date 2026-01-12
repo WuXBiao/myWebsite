@@ -4,13 +4,10 @@ FROM node:22-alpine as build-stage
 # 设置工作目录
 WORKDIR /app
 
-# 设置环境变量
-ENV NODE_ENV=production
-
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 清理 npm 缓存并安装依赖
+# 清理 npm 缓存并安装依赖（包括 devDependencies）
 RUN npm cache clean --force && \
     npm install
 
