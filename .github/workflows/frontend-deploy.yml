@@ -1,8 +1,11 @@
-name: Build and Push Docker Image
+name: Frontend Blog - Build and Deploy
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'my-blog/**'
+      - '.github/workflows/frontend-deploy.yml'
   workflow_dispatch:
 
 jobs:
@@ -22,11 +25,14 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       
-      - name: Build and push
+      - name: Build and push frontend blog
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./my-blog
+          file: ./my-blog/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/my-personal-blog:latest,${{ secrets.DOCKER_USERNAME }}/my-personal-blog:${{ github.sha }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/my-personal-blog:latest
+            ${{ secrets.DOCKER_USERNAME }}/my-personal-blog:${{ github.sha }}
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-personal-blog:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-personal-blog:buildcache,mode=max

@@ -1,6 +1,8 @@
-# 使用 GitHub Actions 和 Docker Hub 部署到阿里云服务器
+# 前端博客部署指南
 
-本文档提供将个人博客项目通过 GitHub Actions 和 Docker Hub 部署到阿里云服务器的详细步骤。这种方式可以节省服务器磁盘空间，因为源代码不需要存储在服务器上。
+本文档提供将前端博客项目通过 GitHub Actions 和 Docker Hub 部署到阿里云服务器的详细步骤。
+
+> **注意**: GitHub Actions 工作流现在位于仓库根目录 `myWebSite/.github/workflows/` 下，可以管理整个项目的 CI/CD 流程。
 
 ## 前提条件
 
