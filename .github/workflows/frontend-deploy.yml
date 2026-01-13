@@ -37,6 +37,10 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/my-personal-blog:${{ github.sha }}
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            VCS_REF=${{ github.sha }}
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-personal-blog:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-personal-blog:buildcache,mode=max
 

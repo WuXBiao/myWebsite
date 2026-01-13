@@ -1,6 +1,11 @@
 # 构建阶段
 FROM node:22-alpine as build-stage
 
+# 构建参数
+ARG BUILD_VERSION=latest
+ARG BUILD_DATE
+ARG VCS_REF
+
 # 设置工作目录
 WORKDIR /app
 
@@ -24,6 +29,18 @@ RUN npx vite build
 
 # 生产阶段
 FROM nginx:stable-alpine as production-stage
+
+# 接收构建参数
+ARG BUILD_VERSION=latest
+ARG BUILD_DATE
+ARG VCS_REF
+
+# 添加元数据标签
+LABEL org.opencontainers.image.version=$BUILD_VERSION \
+      org.opencontainers.image.created=$BUILD_DATE \
+      org.opencontainers.image.revision=$VCS_REF \
+      org.opencontainers.image.title="My Personal Blog" \
+      org.opencontainers.image.description="Personal blog built with Vue 3 and Vite"
 
 # 从构建阶段复制构建结果到 nginx 目录
 COPY --from=build-stage /app/dist /usr/share/nginx/html
