@@ -9,7 +9,7 @@
         </p>
         <div class="flex justify-center space-x-4">
           <router-link 
-            to="/frontend" 
+            to="/fullstack" 
             class="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-medium transition-colors"
           >
             浏览文章
@@ -85,7 +85,7 @@
           </h2>
           
           <p class="text-gray-600 dark:text-gray-300 mb-6 text-center">
-            这是我的个人博客网站，主要分享前端开发、全栈技术和个人思考。希望这些内容对你有所帮助！
+            这是我的个人博客网站，主要分享全栈技术、开发经验和个人思考。希望这些内容对你有所帮助！
           </p>
           
           <div class="text-center">

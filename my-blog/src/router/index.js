@@ -8,12 +8,6 @@ const routes = [
     meta: { title: '首页' }
   },
   {
-    path: '/frontend',
-    name: 'Frontend',
-    component: () => import('../views/Frontend.vue'),
-    meta: { title: '前端' }
-  },
-  {
     path: '/fullstack',
     name: 'Fullstack',
     component: () => import('../views/Fullstack.vue'),

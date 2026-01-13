@@ -94,7 +94,6 @@ const isDarkMode = computed(() => themeStore.darkMode);
 
 const navItems = [
   { name: '首页', path: '/' },
-  { name: '前端', path: '/frontend' },
   { name: '全栈', path: '/fullstack' },
   { name: '文章', path: '/article' },
   { name: '关于', path: '/about' },

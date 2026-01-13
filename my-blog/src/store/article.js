@@ -6,7 +6,7 @@ export const useArticleStore = defineStore('article', {
       {
         id: '1',
         title: '原型、原型链与继承',
-        category: 'frontend',
+        category: 'fullstack',
         subcategory: 'js',
         date: '2023-01-15',
         summary: '深入理解JavaScript中的原型、原型链与继承机制',
@@ -85,7 +85,7 @@ console.log(max.bark()); // "Woof!"
       {
         id: '2',
         title: '作用域与闭包',
-        category: 'frontend',
+        category: 'fullstack',
         subcategory: 'js',
         date: '2023-02-10',
         summary: '理解JavaScript中的作用域、作用域链和闭包概念',
@@ -182,7 +182,7 @@ console.log(counter());  // 3
       {
         id: '3',
         title: '前端工程化实践',
-        category: 'frontend',
+        category: 'fullstack',
         subcategory: 'engineering',
         date: '2023-03-20',
         summary: '现代前端工程化实践与最佳方案',
@@ -328,7 +328,6 @@ jobs:
       },
     ],
     categories: [
-      { id: 'frontend', name: '前端', icon: 'code' },
       { id: 'fullstack', name: '全栈', icon: 'layers' },
       { id: 'article', name: '文章', icon: 'file-text' },
     ],
