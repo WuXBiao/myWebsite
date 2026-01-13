@@ -3,9 +3,9 @@
     <!-- 英雄区域 -->
     <section class="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-16">
       <div class="container mx-auto px-4 text-center">
-        <h1 class="text-4xl md:text-5xl font-bold mb-4">欢迎来到我的个人博客</h1>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">欢迎来到我的空间</h1>
         <p class="text-xl md:text-2xl opacity-90 mb-8 max-w-3xl mx-auto">
-          在这里，我分享前端开发、全栈技术和个人思考
+          在这里，我分享技术交流和个人思考~
         </p>
         <div class="flex justify-center space-x-4">
           <router-link 

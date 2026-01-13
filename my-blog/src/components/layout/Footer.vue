@@ -4,7 +4,7 @@
       <div class="flex flex-col md:flex-row justify-between items-center">
         <div class="mb-4 md:mb-0">
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            © {{ currentYear }} 我的个人博客. 保留所有权利.
+            © {{ currentYear }} biao 的空间站. 保留所有权利.
           </p>
         </div>
         

@@ -4,7 +4,7 @@
       <!-- Logo -->
       <div class="flex items-center">
         <router-link to="/" class="text-xl font-bold text-primary dark:text-primary">
-          我的个人博客
+          biao 的空间站
         </router-link>
       </div>
 
