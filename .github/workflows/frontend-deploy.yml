@@ -71,6 +71,12 @@ jobs:
             docker stop my-personal-blog 2>/dev/null || true
             docker rm my-personal-blog 2>/dev/null || true
             
+            echo "删除旧镜像..."
+            docker rmi $DOCKER_USERNAME/my-personal-blog:latest 2>/dev/null || true
+            
+            echo "重新拉取最新镜像..."
+            docker pull $DOCKER_USERNAME/my-personal-blog:latest
+            
             echo "启动新容器..."
             docker run -d \
               --name my-personal-blog \
