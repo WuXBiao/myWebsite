@@ -12,15 +12,31 @@ mkdir -p logs
 
 # 拉取最新镜像
 echo "拉取最新镜像..."
-docker pull $DOCKER_USERNAME/my-personal-blog:latest
+# 设置超时时间并重试
+echo "尝试从 Docker Hub 拉取镜像..."
+timeout 300 docker pull $DOCKER_USERNAME/my-personal-blog:latest || {
+    echo "Docker Hub 拉取失败，尝试使用镜像加速器..."
+    sleep 10
+    timeout 300 docker pull $DOCKER_USERNAME/my-personal-blog:latest || {
+        echo "镜像拉取失败，请检查网络配置"
+        exit 1
+    }
+}
 
 # 停止并删除旧容器
 echo "停止旧容器..."
-docker-compose down
+docker stop my-personal-blog 2>/dev/null || true
+docker rm my-personal-blog 2>/dev/null || true
 
 # 启动新容器
 echo "启动新容器..."
-docker-compose up -d
+docker run -d \
+  --name my-personal-blog \
+  --restart always \
+  -p 80:80 \
+  -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf \
+  -v $(pwd)/logs:/var/log/nginx \
+  $DOCKER_USERNAME/my-personal-blog:latest
 
 # 清理未使用的镜像
 echo "清理未使用的镜像..."
