@@ -1,0 +1,25 @@
+name: Test SSH Connection
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-ssh:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Test SSH connection
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            echo "SSH 连接成功！"
+            echo "当前用户: $(whoami)"
+            echo "当前目录: $(pwd)"
+            echo "服务器时间: $(date)"
+            echo "Docker 版本: $(docker --version)"
+            echo "检查 my-blog 目录:"
+            ls -la ~/my-blog/ || echo "my-blog 目录不存在"
