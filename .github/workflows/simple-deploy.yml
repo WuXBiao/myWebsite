@@ -1,45 +1,16 @@
-name: Frontend Blog - Build and Deploy
+name: Simple Deploy
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'my-blog/**'
-      - '.github/workflows/frontend-deploy.yml'
+  workflow_run:
+    workflows: ["Frontend Blog - Build and Deploy"]
+    types:
+      - completed
   workflow_dispatch:
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      - name: Build and push frontend blog
-        uses: docker/build-push-action@v4
-        with:
-          context: ./my-blog
-          file: ./my-blog/Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/my-personal-blog:latest
-            ${{ secrets.DOCKER_USERNAME }}/my-personal-blog:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-personal-blog:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-personal-blog:buildcache,mode=max
-
   deploy:
-    needs: build-and-push
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
     steps:
       - name: Deploy to server
@@ -52,6 +23,8 @@ jobs:
           script: |
             cd ~/my-blog
             export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            
+            echo "🚀 开始部署..."
             
             # 拉取最新镜像
             echo "拉取最新镜像..."
@@ -72,12 +45,29 @@ jobs:
               -v $(pwd)/logs:/var/log/nginx \
               $DOCKER_USERNAME/my-personal-blog:latest
             
-            # 检查容器状态
-            echo "检查容器状态..."
-            docker ps | grep my-personal-blog
+            # 等待容器启动
+            echo "等待容器启动..."
+            sleep 10
+            
+            # 健康检查
+            echo "进行健康检查..."
+            if curl -f http://localhost; then
+              echo "✅ 部署成功！网站正常运行"
+              echo "🌐 访问地址: http://$(curl -s ifconfig.me)"
+            else
+              echo "❌ 部署失败！网站无法访问"
+              docker logs my-personal-blog --tail=20
+              exit 1
+            fi
             
             # 清理未使用的镜像
             echo "清理未使用的镜像..."
             docker image prune -f
             
-            echo "部署完成！"
+            echo "🎉 部署完成！"
+
+      - name: Display deployment info
+        run: |
+          echo "✅ 部署已完成！"
+          echo "📝 查看部署日志请访问: https://github.com/${{ github.repository }}/actions"
+          echo "🌐 网站地址: http://你的服务器IP"
