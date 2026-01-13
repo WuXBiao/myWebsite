@@ -38,6 +38,12 @@ const routes = [
     meta: { title: '关于我' }
   },
   {
+    path: '/resume',
+    name: 'Resume',
+    component: () => import('../views/Resume.vue'),
+    meta: { title: '个人简历' }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../views/NotFound.vue'),

@@ -98,6 +98,7 @@ const navItems = [
   { name: '全栈', path: '/fullstack' },
   { name: '文章', path: '/article' },
   { name: '关于', path: '/about' },
+  { name: '简历', path: '/resume' },
 ];
 
 const isActive = (path) => {
