@@ -49,17 +49,13 @@
               
               <h2>联系方式</h2>
               <p>
-                邮箱：your.email@example.com<br>
-                GitHub：<a href="https://github.com/yourusername" target="_blank">github.com/yourusername</a><br>
-                Twitter：<a href="https://twitter.com/yourusername" target="_blank">@yourusername</a>
+                邮箱：1472396277@qq.com<br>
+                GitHub：<a href="https://github.com/WuXBiao/" target="_blank">github.com/yourusername</a><br>
               </p>
               
               <h2>关于本站</h2>
               <p>
                 这个博客是我用来分享技术文章、教程和个人思考的平台。主要内容包括前端开发、全栈技术、性能优化等。
-              </p>
-              <p>
-                本站使用 Vue 3、Vite 和 Tailwind CSS 构建，采用响应式设计，支持深色模式。
               </p>
             </div>
           </div>

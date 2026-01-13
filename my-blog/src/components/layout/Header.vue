@@ -21,7 +21,7 @@
         </router-link>
         
         <a 
-          href="https://github.com/yourusername" 
+          href="https://github.com/WuXBiao/" 
           target="_blank" 
           class="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors"
         >
@@ -68,7 +68,7 @@
           </router-link>
           
           <a 
-            href="https://github.com/yourusername" 
+            href="https://github.com/WuXBiao/" 
             target="_blank" 
             class="px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary dark:hover:text-primary"
             @click="isMobileMenuOpen = false"
