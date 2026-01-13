@@ -5,325 +5,1173 @@ export const useArticleStore = defineStore('article', {
     articles: [
       {
         id: '1',
-        title: '原型、原型链与继承',
+        title: 'Golang 开发：语言特性与底层原理',
         category: 'fullstack',
-        subcategory: 'js',
-        date: '2023-01-15',
-        summary: '深入理解JavaScript中的原型、原型链与继承机制',
+        subcategory: 'golang',
+        date: '2024-01-15',
+        summary: '深入理解 Golang 语言特性，切片 slice，map 特性，底层 GMP 调度器原理',
         content: `
-# 原型、原型链与继承
+# Golang 开发：语言特性与底层原理
 
-JavaScript 是一种基于原型的语言，这意味着对象可以从其他对象继承属性和方法。这种机制与传统的基于类的继承不同。
+## Golang 语言特性
 
-## 原型（Prototype）
+Go 语言是一门编译型、并发型、有垃圾回收功能的编程语言。它结合了 C 的执行速度和 Python 的易用性。
 
-每个 JavaScript 对象都有一个原型（prototype）。原型本身也是一个对象，因此原型也有自己的原型，形成了一个原型链。
+### 1. 切片（Slice）
 
-\`\`\`javascript
-// 构造函数
-function Person(name) {
-  this.name = name;
+切片是 Go 中最重要的数据结构之一，它是对数组的抽象。
+
+\`\`\`go
+// 切片声明
+var s []int
+
+// 使用 make 创建切片
+s := make([]int, 5, 10)  // 长度 5，容量 10
+
+// 切片操作
+s = append(s, 1, 2, 3)   // 追加元素
+subSlice := s[1:3]       // 切片操作
+
+// 切片的底层结构
+type SliceHeader struct {
+    Data uintptr
+    Len  int
+    Cap  int
 }
-
-// 在原型上添加方法
-Person.prototype.sayHello = function() {
-  return \`Hello, my name is \${this.name}\`;
-};
-
-// 创建实例
-const alice = new Person('Alice');
-console.log(alice.sayHello()); // "Hello, my name is Alice"
 \`\`\`
 
-## 原型链（Prototype Chain）
+**切片的扩容机制**：
+- 当容量小于 1024 时，扩容为原来的 2 倍
+- 当容量大于等于 1024 时，扩容为原来的 1.25 倍
 
-当我们尝试访问一个对象的属性时，JavaScript 会首先在对象本身查找该属性。如果没有找到，它会继续在对象的原型中查找，然后是原型的原型，以此类推，直到找到该属性或到达原型链的末端（通常是 Object.prototype）。
+### 2. Map 特性
 
-\`\`\`javascript
-// alice 实例没有 toString 方法，但可以通过原型链调用 Object.prototype.toString
-console.log(alice.toString()); // "[object Object]"
-\`\`\`
+Map 是 Go 中的哈希表实现，提供高效的键值对存储。
 
-## 继承（Inheritance）
+\`\`\`go
+// Map 声明和初始化
+m := make(map[string]int)
+m["age"] = 25
 
-在 JavaScript 中，我们可以通过原型链实现继承：
-
-\`\`\`javascript
-// 父类构造函数
-function Animal(name) {
-  this.name = name;
+// Map 的遍历（无序）
+for key, value := range m {
+    fmt.Println(key, value)
 }
 
-Animal.prototype.eat = function() {
-  return \`\${this.name} is eating.\`;
-};
+// Map 的删除
+delete(m, "age")
 
-// 子类构造函数
-function Dog(name, breed) {
-  Animal.call(this, name); // 调用父类构造函数
-  this.breed = breed;
+// 检查键是否存在
+if val, ok := m["age"]; ok {
+    fmt.Println(val)
 }
-
-// 设置原型链，使 Dog 继承 Animal
-Dog.prototype = Object.create(Animal.prototype);
-Dog.prototype.constructor = Dog;
-
-// 添加子类特有的方法
-Dog.prototype.bark = function() {
-  return 'Woof!';
-};
-
-// 创建实例
-const max = new Dog('Max', 'Labrador');
-console.log(max.eat()); // "Max is eating."
-console.log(max.bark()); // "Woof!"
 \`\`\`
 
-这种继承模式被称为"原型继承"，是 JavaScript 中实现代码重用的基础机制。
+**Map 的底层实现**：
+- 使用哈希表实现，采用链地址法解决哈希冲突
+- 初始容量为 8，当负载因子达到 6.5 时会进行扩容
+
+## GMP 调度器原理
+
+Go 的并发模型基于 GMP 调度器，这是 Go 高效并发的核心。
+
+### GMP 三层模型
+
+- **G（Goroutine）**：用户级轻量级线程，由 Go 运行时管理
+- **M（Machine）**：操作系统线程，真正执行代码的实体
+- **P（Processor）**：逻辑处理器，管理 G 的队列和执行上下文
+
+\`\`\`go
+// Goroutine 创建
+go func() {
+    fmt.Println("Running in goroutine")
+}()
+
+// 调度器会自动分配 G 到可用的 P 和 M
+\`\`\`
+
+### 调度策略
+
+1. **本地队列调度**：P 优先执行自己队列中的 G
+2. **全局队列调度**：当本地队列为空时，从全局队列获取 G
+3. **工作窃取**：当本地队列为空时，可以从其他 P 的队列中窃取 G
+4. **抢占式调度**：长时间运行的 G 会被抢占
+
+这种设计使得 Go 能够高效地管理数百万个 goroutine。
         `,
       },
       {
         id: '2',
-        title: '作用域与闭包',
+        title: '并发编程：Goroutine、Context 与 Channel',
         category: 'fullstack',
-        subcategory: 'js',
-        date: '2023-02-10',
-        summary: '理解JavaScript中的作用域、作用域链和闭包概念',
+        subcategory: 'concurrency',
+        date: '2024-02-10',
+        summary: '熟悉 Go 并发编程，goroutine、context、sync 包及 channel 进行高效并发任务处理',
         content: `
-# 作用域与闭包
+# 并发编程：Goroutine、Context 与 Channel
 
-## 作用域（Scope）
+## Goroutine 基础
 
-作用域是指程序中定义变量的区域，它决定了变量的可访问性（可见性）。JavaScript 主要有以下几种作用域：
+Goroutine 是 Go 中的轻量级线程，创建成本低，可以轻松创建数百万个。
 
-1. **全局作用域**：变量在函数外部定义，可以在整个程序中访问。
-2. **函数作用域**：变量在函数内部定义，只能在函数内部访问。
-3. **块级作用域**：通过 let 和 const 关键字定义的变量，只能在定义它们的块（由 {} 包围）内访问。
+\`\`\`go
+// 创建 goroutine
+go func() {
+    fmt.Println("Goroutine running")
+}()
 
-\`\`\`javascript
-// 全局作用域
-const globalVar = 'I am global';
-
-function exampleFunction() {
-  // 函数作用域
-  const functionVar = 'I am function-scoped';
-  
-  if (true) {
-    // 块级作用域
-    let blockVar = 'I am block-scoped';
-    console.log(globalVar);      // 可访问
-    console.log(functionVar);    // 可访问
-    console.log(blockVar);       // 可访问
-  }
-  
-  console.log(globalVar);        // 可访问
-  console.log(functionVar);      // 可访问
-  // console.log(blockVar);      // 错误：blockVar 在这里不可访问
-}
-
-console.log(globalVar);          // 可访问
-// console.log(functionVar);     // 错误：functionVar 在这里不可访问
+// 等待 goroutine 完成
+var wg sync.WaitGroup
+wg.Add(1)
+go func() {
+    defer wg.Done()
+    fmt.Println("Task completed")
+}()
+wg.Wait()
 \`\`\`
 
-## 作用域链（Scope Chain）
+## Context 包
 
-当代码尝试访问一个变量时，JavaScript 引擎会首先在当前作用域中查找。如果没有找到，它会继续在外部作用域中查找，直到找到该变量或到达全局作用域。这一系列的作用域查找形成了作用域链。
+Context 用于管理请求的生命周期、超时和取消。
 
-\`\`\`javascript
-const global = 'global';
+\`\`\`go
+// 创建带超时的 context
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
 
-function outer() {
-  const outerVar = 'outer';
-  
-  function inner() {
-    const innerVar = 'inner';
-    console.log(innerVar);  // 当前作用域
-    console.log(outerVar);  // 外部作用域
-    console.log(global);    // 全局作用域
-  }
-  
-  inner();
-}
-
-outer();
+// 在 goroutine 中使用 context
+go func(ctx context.Context) {
+    select {
+    case <-ctx.Done():
+        fmt.Println("Context cancelled:", ctx.Err())
+    case <-time.After(10 * time.Second):
+        fmt.Println("Task completed")
+    }
+}(ctx)
 \`\`\`
 
-## 闭包（Closure）
+**Context 的四种类型**：
+- Background：根 context
+- WithCancel：可取消的 context
+- WithTimeout：带超时的 context
+- WithValue：携带值的 context
 
-闭包是指一个函数可以记住并访问其词法作用域，即使该函数在其词法作用域之外执行。简单来说，闭包使得函数可以保留对创建它的作用域的访问权限。
+## Channel 通信
 
-\`\`\`javascript
-function createCounter() {
-  let count = 0;  // 私有变量
-  
-  return function() {
-    count++;
-    return count;
-  };
+Channel 是 goroutine 之间的通信机制。
+
+\`\`\`go
+// 创建 channel
+ch := make(chan int)
+closedCh := make(chan int, 10)  // 缓冲 channel
+
+// 发送和接收
+go func() {
+    ch <- 42  // 发送
+}()
+value := <-ch  // 接收
+
+// 关闭 channel
+close(closedCh)
+
+// 遍历 channel
+for val := range closedCh {
+    fmt.Println(val)
 }
 
-const counter = createCounter();
-console.log(counter());  // 1
-console.log(counter());  // 2
-console.log(counter());  // 3
+// 使用 select 处理多个 channel
+select {
+case msg := <-ch1:
+    fmt.Println("Received from ch1:", msg)
+case msg := <-ch2:
+    fmt.Println("Received from ch2:", msg)
+case <-ctx.Done():
+    fmt.Println("Context cancelled")
+}
 \`\`\`
 
-在这个例子中，返回的函数形成了一个闭包，它"记住"了 createCounter 函数作用域中的 count 变量，即使 createCounter 函数已经执行完毕。
+## Sync 包
 
-闭包的主要用途：
+Sync 包提供了同步原语。
 
-1. **数据私有化**：创建私有变量和方法
-2. **函数工厂**：创建具有特定行为的函数
-3. **模块模式**：组织和封装代码
+\`\`\`go
+// WaitGroup：等待一组 goroutine 完成
+var wg sync.WaitGroup
+wg.Add(3)
+for i := 0; i < 3; i++ {
+    go func() {
+        defer wg.Done()
+        // 执行任务
+    }()
+}
+wg.Wait()
 
-闭包是 JavaScript 中非常强大的特性，但也需要谨慎使用，因为它们可能导致内存泄漏（如果不再需要的闭包仍然被引用）。
+// Mutex：互斥锁
+var mu sync.Mutex
+mu.Lock()
+// 临界区代码
+mu.Unlock()
+
+// RWMutex：读写锁
+var rwmu sync.RWMutex
+rwmu.RLock()  // 读锁
+// 读操作
+rwmu.RUnlock()
+
+// Once：只执行一次
+var once sync.Once
+once.Do(func() {
+    fmt.Println("This runs only once")
+})
+\`\`\`
+
+## 并发最佳实践
+
+1. **使用 Context 管理生命周期**
+2. **优先使用 Channel 而不是共享内存**
+3. **避免数据竞争，使用 Mutex 保护共享数据**
+4. **使用 WaitGroup 同步 goroutine**
+5. **合理设置 goroutine 数量，避免资源耗尽**
         `,
       },
       {
         id: '3',
-        title: '前端工程化实践',
+        title: '数据库技术：Redis、MySQL 与大数据分析',
         category: 'fullstack',
-        subcategory: 'engineering',
-        date: '2023-03-20',
-        summary: '现代前端工程化实践与最佳方案',
+        subcategory: 'database',
+        date: '2024-03-20',
+        summary: '非关系型、关系型数据库及大数据分析 SQL 技术',
         content: `
-# 前端工程化实践
+# 数据库技术：Redis、MySQL 与大数据分析
 
-前端工程化是指将前端开发流程规范化、标准化，使用工程化方法、工具链和框架来提高开发效率和代码质量。
+## Redis 缓存技术
 
-## 为什么需要前端工程化？
+Redis 是高性能的内存数据库，广泛用于缓存和会话存储。
 
-随着前端技术的快速发展，项目规模和复杂度不断增加，前端开发面临以下挑战：
+### 缓存雪崩与穿透
 
-1. **代码组织问题**：大型项目的代码量庞大，需要合理的模块化方案
-2. **效率问题**：手动处理资源、依赖、构建过程耗时且容易出错
-3. **性能问题**：需要代码压缩、分割、懒加载等优化手段
-4. **协作问题**：多人开发需要统一的代码风格和提交规范
-5. **质量问题**：需要自动化测试和持续集成保障代码质量
+**缓存雪崩**：大量缓存同时失效，导致数据库被击穿。
 
-## 前端工程化的核心内容
-
-### 1. 模块化开发
-
-模块化是将复杂系统分解为独立、可复用的模块。现代前端主要采用 ES Modules、CommonJS 等模块化规范。
-
-\`\`\`javascript
-// math.js
-export function add(a, b) {
-  return a + b;
+\`\`\`go
+// 解决方案：随机过期时间
+func setWithRandomExpire(key string, value interface{}, baseExpire time.Duration) {
+    randomExpire := baseExpire + time.Duration(rand.Intn(300))*time.Second
+    rdb.Set(ctx, key, value, randomExpire)
 }
 
-// app.js
-import { add } from './math.js';
-console.log(add(1, 2)); // 3
-\`\`\`
-
-### 2. 包管理工具
-
-npm、Yarn、pnpm 等工具用于管理项目依赖，简化安装、更新和删除第三方库的过程。
-
-\`\`\`json
-{
-  "name": "my-project",
-  "version": "1.0.0",
-  "dependencies": {
-    "vue": "^3.2.0",
-    "axios": "^0.24.0"
-  },
-  "devDependencies": {
-    "vite": "^2.7.0",
-    "eslint": "^8.5.0"
-  }
+// 使用本地缓存 + Redis 双层缓存
+// 使用互斥锁防止缓存击穿
+var mu sync.Mutex
+func getWithLock(key string) interface{} {
+    mu.Lock()
+    defer mu.Unlock()
+    // 获取缓存逻辑
 }
 \`\`\`
 
-### 3. 构建工具
+**缓存穿透**：查询不存在的数据，每次都穿透到数据库。
 
-Webpack、Vite、Rollup 等构建工具用于将源代码转换为可部署的静态资源。
-
-\`\`\`javascript
-// vite.config.js
-export default {
-  plugins: [...],
-  build: {
-    outDir: 'dist',
-    minify: 'terser',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router']
+\`\`\`go
+// 解决方案：缓存空值
+func getUser(id string) *User {
+    val, err := rdb.Get(ctx, "user:"+id).Result()
+    if err == redis.Nil {
+        // 从数据库查询
+        user := db.GetUser(id)
+        if user == nil {
+            // 缓存空值，设置较短的过期时间
+            rdb.Set(ctx, "user:"+id, "null", 1*time.Minute)
+            return nil
         }
-      }
+        rdb.Set(ctx, "user:"+id, user, 24*time.Hour)
+        return user
     }
-  }
+    // 反序列化返回
 }
 \`\`\`
 
-### 4. 代码规范和质量控制
+## MySQL 数据库优化
 
-ESLint、Prettier、StyleLint 等工具用于统一代码风格和发现潜在问题。
+### 事务隔离级别
 
-\`\`\`json
-// .eslintrc.json
-{
-  "extends": ["eslint:recommended", "plugin:vue/vue3-recommended"],
-  "rules": {
-    "semi": ["error", "always"],
-    "quotes": ["error", "single"]
-  }
-}
+\`\`\`sql
+-- 四种隔离级别
+-- 1. READ UNCOMMITTED：读未提交
+-- 2. READ COMMITTED：读已提交
+-- 3. REPEATABLE READ：可重复读（MySQL 默认）
+-- 4. SERIALIZABLE：可序列化
+
+-- 设置隔离级别
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 \`\`\`
 
-### 5. 自动化测试
+### 索引优化
 
-Jest、Vitest、Cypress 等测试框架用于单元测试、集成测试和端到端测试。
+\`\`\`sql
+-- 创建索引
+CREATE INDEX idx_user_email ON users(email);
 
-\`\`\`javascript
-// sum.test.js
-import { sum } from './sum';
+-- 复合索引（遵循最左前缀原则）
+CREATE INDEX idx_user_email_status ON users(email, status);
 
-test('adds 1 + 2 to equal 3', () => {
-  expect(sum(1, 2)).toBe(3);
-});
+-- 查看索引使用情况
+EXPLAIN SELECT * FROM users WHERE email = 'test@example.com';
+
+-- 避免索引失效
+-- 1. 避免在索引列上进行函数操作
+-- 2. 避免使用 OR 连接不同列
+-- 3. 避免使用 LIKE '%keyword'
+-- 4. 避免隐式类型转换
 \`\`\`
 
-### 6. CI/CD 流程
+### 主从复制
 
-使用 GitHub Actions、Jenkins 等工具实现持续集成和持续部署。
+\`\`\`sql
+-- 主库配置
+CHANGE MASTER TO
+  MASTER_HOST='master_host',
+  MASTER_USER='repl_user',
+  MASTER_PASSWORD='password',
+  MASTER_LOG_FILE='mysql-bin.000001',
+  MASTER_LOG_POS=154;
+
+START SLAVE;
+\`\`\`
+
+## 大数据分析
+
+### HiveSQL 与 ODPS
+
+\`\`\`sql
+-- HiveSQL 分区表
+CREATE TABLE user_events (
+    user_id STRING,
+    event_type STRING,
+    event_time BIGINT
+)
+PARTITIONED BY (dt STRING)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
+
+-- 分区查询
+SELECT user_id, COUNT(*) as event_count
+FROM user_events
+WHERE dt >= '2024-01-01' AND dt <= '2024-01-31'
+GROUP BY user_id;
+
+-- ODPS 分布式查询
+SELECT 
+    user_id,
+    COUNT(*) as pv,
+    COUNT(DISTINCT session_id) as uv
+FROM events
+WHERE ds >= '20240101' AND ds <= '20240131'
+GROUP BY user_id;
+\`\`\`
+
+### 调度配置
 
 \`\`\`yaml
-# .github/workflows/deploy.yml
-name: Deploy
-on:
-  push:
-    branches: [main]
+# Airflow DAG 配置示例
+from airflow import DAG
+from airflow.operators.bash import BashOperator
+
+dag = DAG('daily_etl', schedule_interval='0 2 * * *')
+
+task1 = BashOperator(
+    task_id='extract_data',
+    bash_command='hive -e "SELECT * FROM source_table"',
+    dag=dag
+)
+
+task2 = BashOperator(
+    task_id='transform_data',
+    bash_command='python transform.py',
+    dag=dag
+)
+
+task1 >> task2
+\`\`\`
+        `,
+      },
+      {
+        id: '4',
+        title: '框架与工具：Gin、Go-Zero、Gorm 实战',
+        category: 'fullstack',
+        subcategory: 'framework',
+        date: '2024-04-15',
+        summary: '掌握 Gin、Go-Zero、Gorm 框架，设计并实现复杂的业务逻辑',
+        content: `
+# 框架与工具：Gin、Go-Zero、Gorm 实战
+
+## Gin 框架
+
+Gin 是高性能的 HTTP 框架，适合构建 RESTful API。
+
+\`\`\`go
+package main
+
+import "github.com/gin-gonic/gin"
+
+func main() {
+    r := gin.Default()
+    
+    // 路由定义
+    r.GET("/users/:id", func(c *gin.Context) {
+        id := c.Param("id")
+        c.JSON(200, gin.H{
+            "id": id,
+            "name": "John",
+        })
+    })
+    
+    // 中间件
+    r.Use(AuthMiddleware())
+    
+    // 路由组
+    api := r.Group("/api")
+    {
+        api.POST("/users", CreateUser)
+        api.GET("/users", ListUsers)
+    }
+    
+    r.Run(":8080")
+}
+
+// 中间件示例
+func AuthMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        if token == "" {
+            c.JSON(401, gin.H{"error": "Unauthorized"})
+            c.Abort()
+            return
+        }
+        c.Next()
+    }
+}
+\`\`\`
+
+## Gorm ORM
+
+Gorm 是强大的 ORM 库，简化数据库操作。
+
+\`\`\`go
+import "gorm.io/gorm"
+
+type User struct {
+    ID    uint
+    Name  string
+    Email string
+}
+
+// 创建
+db.Create(&User{Name: "John", Email: "john@example.com"})
+
+// 查询
+var user User
+db.First(&user, 1)  // 按 ID 查询
+db.Where("email = ?", "john@example.com").First(&user)
+
+// 更新
+db.Model(&user).Update("name", "Jane")
+
+// 删除
+db.Delete(&user)
+
+// 关联查询
+type Post struct {
+    ID     uint
+    Title  string
+    UserID uint
+    User   User
+}
+
+var posts []Post
+db.Preload("User").Find(&posts)
+\`\`\`
+
+## Go-Zero 框架
+
+Go-Zero 是高性能的微服务框架，提供完整的解决方案。
+
+\`\`\`yaml
+# api 定义文件 (user.api)
+type User {
+  id   int64
+  name string
+  email string
+}
+
+service user-api {
+  @handler GetUser
+  get /users/:id (GetUserRequest) returns (User)
+  
+  @handler CreateUser
+  post /users (CreateUserRequest) returns (User)
+}
+\`\`\`
+
+\`\`\`go
+// 生成的处理器
+func (l *GetUserLogic) GetUser(req *types.GetUserRequest) (*types.User, error) {
+    // 业务逻辑
+    user, err := l.svcCtx.UserModel.FindOne(l.ctx, req.Id)
+    if err != nil {
+        return nil, err
+    }
+    
+    return &types.User{
+        Id:    user.Id,
+        Name:  user.Name,
+        Email: user.Email,
+    }, nil
+}
+\`\`\`
+
+## 最佳实践
+
+1. **分层架构**：handler → logic → model
+2. **错误处理**：统一的错误码和错误信息
+3. **日志记录**：使用结构化日志
+4. **性能优化**：连接池、缓存、异步处理
+5. **单元测试**：提高代码质量
+        `,
+      },
+      {
+        id: '5',
+        title: '中间件技术：Kafka、MQ 与 Protobuf',
+        category: 'fullstack',
+        subcategory: 'middleware',
+        date: '2024-05-10',
+        summary: '掌握 Kafka、MQ 消息队列，Protobuf 数据序列化，token 鉴权机制设计',
+        content: `
+# 中间件技术：Kafka、MQ 与 Protobuf
+
+## Kafka 消息队列
+
+Kafka 是分布式流处理平台，用于高吞吐量的数据处理。
+
+\`\`\`go
+import "github.com/segmentio/kafka-go"
+
+// 生产者
+func produceMessage() {
+    writer := &kafka.Writer{
+        Addr:     kafka.TCP("localhost:9092"),
+        Topic:    "events",
+        Balancer: &kafka.LeastBytes{},
+    }
+    defer writer.Close()
+    
+    err := writer.WriteMessages(context.Background(),
+        kafka.Message{
+            Key:   []byte("user-123"),
+            Value: []byte("user login event"),
+        },
+    )
+}
+
+// 消费者
+func consumeMessage() {
+    reader := kafka.NewReader(kafka.ReaderConfig{
+        Brokers: []string{"localhost:9092"},
+        Topic:   "events",
+        GroupID: "consumer-group",
+    })
+    defer reader.Close()
+    
+    for {
+        msg, err := reader.ReadMessage(context.Background())
+        if err != nil {
+            break
+        }
+        fmt.Printf("Message: %s\\n", string(msg.Value))
+    }
+}
+\`\`\`
+
+## RabbitMQ / ActiveMQ
+
+\`\`\`go
+import "github.com/streadway/amqp"
+
+// 连接和声明队列
+conn, _ := amqp.Dial("amqp://guest:guest@localhost:5672/")
+ch, _ := conn.Channel()
+
+q, _ := ch.QueueDeclare("task_queue", true, false, false, false, nil)
+
+// 发送消息
+ch.Publish("", q.Name, false, false, amqp.Publishing{
+    ContentType: "text/plain",
+    Body:        []byte("Hello World"),
+})
+
+// 消费消息
+msgs, _ := ch.Consume(q.Name, "", false, false, false, false, nil)
+for d := range msgs {
+    fmt.Printf("Received: %s\\n", d.Body)
+    d.Ack(false)
+}
+\`\`\`
+
+## Protobuf 数据序列化
+
+Protobuf 是高效的数据序列化格式，比 JSON 更紧凑。
+
+\`\`\`protobuf
+// user.proto
+syntax = "proto3";
+
+package user;
+
+message User {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+  repeated string tags = 4;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+}
+\`\`\`
+
+\`\`\`go
+// 使用 protobuf
+user := &user.User{
+    Id:    123,
+    Name:  "John",
+    Email: "john@example.com",
+    Tags:  []string{"admin", "user"},
+}
+
+// 序列化
+data, _ := proto.Marshal(user)
+
+// 反序列化
+newUser := &user.User{}
+proto.Unmarshal(data, newUser)
+\`\`\`
+
+## Token 鉴权机制
+
+\`\`\`go
+import "github.com/golang-jwt/jwt/v4"
+
+// JWT Token 生成
+func GenerateToken(userID int64) (string, error) {
+    claims := jwt.MapClaims{
+        "user_id": userID,
+        "exp":     time.Now().Add(24 * time.Hour).Unix(),
+    }
+    
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString([]byte("secret_key"))
+}
+
+// Token 验证
+func VerifyToken(tokenString string) (int64, error) {
+    token, err := jwt.ParseWithClaims(tokenString, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+        return []byte("secret_key"), nil
+    })
+    
+    if claims, ok := token.Claims.(*jwt.MapClaims); ok && token.Valid {
+        userID := int64((*claims)["user_id"].(float64))
+        return userID, nil
+    }
+    return 0, err
+}
+
+// 中间件集成
+func TokenMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        userID, err := VerifyToken(token)
+        if err != nil {
+            c.JSON(401, gin.H{"error": "Invalid token"})
+            c.Abort()
+            return
+        }
+        c.Set("user_id", userID)
+        c.Next()
+    }
+}
+\`\`\`
+        `,
+      },
+      {
+        id: '6',
+        title: '网络与操作系统基础',
+        category: 'fullstack',
+        subcategory: 'network',
+        date: '2024-06-05',
+        summary: '深入理解 TCP/IP、HTTP 协议和 Linux 操作系统',
+        content: `
+# 网络与操作系统基础
+
+## TCP/IP 协议
+
+### TCP 三次握手
+
+\`\`\`
+客户端                          服务器
+  |                              |
+  |------------ SYN ------------>|
+  |                              |
+  |<------- SYN-ACK -------------|
+  |                              |
+  |------------ ACK ------------>|
+  |                              |
+  |<---- 数据传输 ---->|
+\`\`\`
+
+**过程**：
+1. 客户端发送 SYN 包，进入 SYN_SENT 状态
+2. 服务器接收 SYN，发送 SYN-ACK，进入 SYN_RCVD 状态
+3. 客户端接收 SYN-ACK，发送 ACK，进入 ESTABLISHED 状态
+4. 服务器接收 ACK，进入 ESTABLISHED 状态
+
+### TCP 四次挥手
+
+\`\`\`
+客户端                          服务器
+  |                              |
+  |------------ FIN ------------>|
+  |                              |
+  |<------------ ACK ------------|
+  |                              |
+  |<------------ FIN ------------|
+  |                              |
+  |------------ ACK ------------>|
+\`\`\`
+
+## HTTP 协议
+
+### HTTP 请求方法
+
+- **GET**：获取资源
+- **POST**：创建资源
+- **PUT**：更新资源
+- **DELETE**：删除资源
+- **PATCH**：部分更新资源
+- **HEAD**：获取资源元数据
+- **OPTIONS**：获取资源支持的方法
+
+### HTTP 状态码
+
+- **1xx**：信息响应
+- **2xx**：成功响应（200 OK, 201 Created）
+- **3xx**：重定向（301 Moved Permanently, 304 Not Modified）
+- **4xx**：客户端错误（400 Bad Request, 404 Not Found）
+- **5xx**：服务器错误（500 Internal Server Error, 503 Service Unavailable）
+
+### HTTP 缓存
+
+\`\`\`
+// 强缓存
+Cache-Control: max-age=3600, public
+Expires: Wed, 21 Oct 2025 07:28:00 GMT
+
+// 协商缓存
+ETag: "33a64df551425fcc55e4d42a148795d9f25f89d4"
+Last-Modified: Wed, 21 Oct 2024 07:28:00 GMT
+
+// 请求头
+If-None-Match: "33a64df551425fcc55e4d42a148795d9f25f89d4"
+If-Modified-Since: Wed, 21 Oct 2024 07:28:00 GMT
+\`\`\`
+
+## Linux 操作系统
+
+### 常用命令
+
+\`\`\`bash
+# 文件操作
+ls -la              # 列出文件详情
+cd /path            # 切换目录
+mkdir dir           # 创建目录
+cp file1 file2      # 复制文件
+mv file1 file2      # 移动/重命名
+rm file             # 删除文件
+
+# 进程管理
+ps aux              # 查看进程
+top                 # 实时监控进程
+kill -9 pid         # 强制杀死进程
+bg/fg               # 后台/前台运行
+
+# 网络命令
+netstat -tuln       # 查看监听端口
+ss -tuln            # 查看 socket 状态
+ping host           # 测试连接
+curl/wget           # 下载文件
+
+# 日志查看
+tail -f file        # 实时查看日志
+grep pattern file   # 搜索日志
+awk/sed             # 文本处理
+
+# 打包部署
+tar -czf file.tar.gz dir/   # 压缩
+tar -xzf file.tar.gz        # 解压
+scp file user@host:/path    # 远程复制
+ssh user@host               # 远程登录
+\`\`\`
+
+### 系统监控
+
+\`\`\`bash
+# CPU 使用率
+top
+htop
+
+# 内存使用
+free -h
+vmstat
+
+# 磁盘使用
+df -h
+du -sh dir
+
+# 网络流量
+iftop
+nethogs
+\`\`\`
+        `,
+      },
+      {
+        id: '7',
+        title: 'Go Context：请求生命周期管理',
+        category: 'fullstack',
+        subcategory: 'golang',
+        date: '2024-07-01',
+        summary: '熟练使用 Go Context 进行请求生命周期管理和取消操作',
+        content: `
+# Go Context：请求生命周期管理
+
+## Context 基础
+
+Context 是 Go 中用于管理请求生命周期、超时和取消的标准库。
+
+\`\`\`go
+import "context"
+
+// Context 接口
+type Context interface {
+    Deadline() (deadline time.Time, ok bool)
+    Done() <-chan struct{}
+    Err() error
+    Value(key interface{}) interface{}
+}
+\`\`\`
+
+## Context 类型
+
+### 1. Background Context
+
+\`\`\`go
+// 根 context，用于主函数、初始化等
+ctx := context.Background()
+\`\`\`
+
+### 2. WithCancel
+
+\`\`\`go
+ctx, cancel := context.WithCancel(context.Background())
+defer cancel()
+
+go func(ctx context.Context) {
+    select {
+    case <-ctx.Done():
+        fmt.Println("Cancelled")
+    case <-time.After(5 * time.Second):
+        fmt.Println("Completed")
+    }
+}(ctx)
+
+// 手动取消
+time.Sleep(2 * time.Second)
+cancel()
+\`\`\`
+
+### 3. WithTimeout
+
+\`\`\`go
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+// 超时自动取消
+select {
+case <-ctx.Done():
+    fmt.Println("Timeout or cancelled:", ctx.Err())
+case result := <-doSomething(ctx):
+    fmt.Println("Result:", result)
+}
+\`\`\`
+
+### 4. WithDeadline
+
+\`\`\`go
+deadline := time.Now().Add(5 * time.Second)
+ctx, cancel := context.WithDeadline(context.Background(), deadline)
+defer cancel()
+\`\`\`
+
+### 5. WithValue
+
+\`\`\`go
+type key string
+
+const userKey key = "user"
+
+ctx := context.WithValue(context.Background(), userKey, "john")
+
+// 获取值
+user := ctx.Value(userKey).(string)
+\`\`\`
+
+## 实战应用
+
+### HTTP 请求超时
+
+\`\`\`go
+func fetchWithTimeout(url string, timeout time.Duration) (string, error) {
+    ctx, cancel := context.WithTimeout(context.Background(), timeout)
+    defer cancel()
+    
+    req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return "", err
+    }
+    defer resp.Body.Close()
+    
+    body, _ := io.ReadAll(resp.Body)
+    return string(body), nil
+}
+\`\`\`
+
+### 数据库查询超时
+
+\`\`\`go
+func queryWithTimeout(ctx context.Context, query string) (*sql.Rows, error) {
+    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+    defer cancel()
+    
+    return db.QueryContext(ctx, query)
+}
+\`\`\`
+
+### Goroutine 协调
+
+\`\`\`go
+func processWithCancel(ctx context.Context, items []string) {
+    ctx, cancel := context.WithCancel(ctx)
+    defer cancel()
+    
+    var wg sync.WaitGroup
+    for _, item := range items {
+        wg.Add(1)
+        go func(item string) {
+            defer wg.Done()
+            select {
+            case <-ctx.Done():
+                fmt.Println("Cancelled:", item)
+            default:
+                // 处理 item
+                fmt.Println("Processing:", item)
+            }
+        }(item)
+    }
+    
+    wg.Wait()
+}
+\`\`\`
+
+## 最佳实践
+
+1. **不要在结构体中存储 Context**
+2. **Context 应该作为函数的第一个参数**
+3. **使用 context.WithCancel 实现优雅关闭**
+4. **合理设置超时时间，避免过长或过短**
+5. **使用 context.WithValue 传递请求相关的值**
+6. **总是 defer cancel() 释放资源**
+        `,
+      },
+      {
+        id: '8',
+        title: '开发工具与团队协作',
+        category: 'fullstack',
+        subcategory: 'tools',
+        date: '2024-08-15',
+        summary: '熟练使用 Git、AI 编辑器、IDE 和团队协作工具',
+        content: `
+# 开发工具与团队协作
+
+## Git 版本控制
+
+### 基本命令
+
+\`\`\`bash
+# 初始化仓库
+git init
+git clone <url>
+
+# 提交流程
+git add .
+git commit -m "feat: add new feature"
+git push origin main
+
+# 分支管理
+git branch feature/new-feature
+git checkout feature/new-feature
+git merge feature/new-feature
+
+# 查看历史
+git log --oneline
+git diff HEAD~1
+git show <commit>
+\`\`\`
+
+### 工作流规范
+
+**Conventional Commits**：
+\`\`\`
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+\`\`\`
+
+类型：
+- **feat**：新功能
+- **fix**：bug 修复
+- **docs**：文档
+- **style**：代码风格
+- **refactor**：重构
+- **perf**：性能优化
+- **test**：测试
+- **chore**：构建、依赖等
+
+### 高级技巧
+
+\`\`\`bash
+# 变基
+git rebase main
+
+# 交互式变基
+git rebase -i HEAD~3
+
+# 暂存
+git stash
+git stash pop
+
+# 撤销
+git reset --soft HEAD~1
+git revert <commit>
+
+# 标签
+git tag v1.0.0
+git push origin v1.0.0
+\`\`\`
+
+## AI 编辑器
+
+### Cursor
+
+Cursor 是基于 VS Code 的 AI 编辑器，提供智能代码补全和生成。
+
+**快捷键**：
+- Ctrl+K：AI 代码生成
+- Ctrl+L：AI 聊天
+- Ctrl+Shift+K：删除行
+
+### Windsurf
+
+Windsurf 是新一代 AI 编辑器，提供更强大的代码理解和生成能力。
+
+**特性**：
+- 自然语言编程
+- 多文件编辑
+- 实时代码分析
+
+## IDE 配置
+
+### GoLand
+
+\`\`\`
+// 推荐配置
+- 启用 gofmt 自动格式化
+- 配置 golangci-lint 检查
+- 启用 go mod 支持
+- 配置调试器
+\`\`\`
+
+### VS Code
+
+\`\`\`json
+{
+  "go.useLanguageServer": true,
+  "go.lintOnSave": "package",
+  "go.lintTool": "golangci-lint",
+  "editor.formatOnSave": true,
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  }
+}
+\`\`\`
+
+## 团队协作
+
+### 代码审查
+
+\`\`\`
+1. 创建 Pull Request
+2. 请求代码审查
+3. 解决审查意见
+4. 合并到主分支
+\`\`\`
+
+### 持续集成
+
+\`\`\`yaml
+# GitHub Actions
+name: CI
+
+on: [push, pull_request]
+
 jobs:
-  build-and-deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install dependencies
-        run: npm install
-      - name: Build
-        run: npm run build
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: "\${{ secrets.GITHUB_TOKEN }}"
-          publish_dir: ./dist
+      - uses: actions/setup-go@v2
+      - run: go test ./...
+      - run: go vet ./...
 \`\`\`
 
-## 工程化最佳实践
+### 文档维护
 
-1. **组件化开发**：将 UI 拆分为可复用的组件
-2. **状态管理**：使用 Vuex/Pinia、Redux 等工具管理应用状态
-3. **类型检查**：使用 TypeScript 增强代码的可靠性
-4. **代码分割**：实现按需加载，提高首屏加载速度
-5. **性能优化**：图片懒加载、资源预加载、缓存策略等
-6. **版本控制**：使用语义化版本控制
-7. **文档生成**：自动生成 API 文档和组件文档
+\`\`\`markdown
+# 项目文档结构
+- README.md：项目概述
+- CONTRIBUTING.md：贡献指南
+- docs/：详细文档
+- examples/：示例代码
+\`\`\`
 
-前端工程化是一个持续演进的过程，需要根据项目规模和团队情况选择合适的工具和方法。良好的工程化实践可以显著提高开发效率和产品质量。
+## 最佳实践
+
+1. **定期拉取最新代码**
+2. **创建特性分支进行开发**
+3. **编写有意义的提交信息**
+4. **进行代码审查**
+5. **使用 CI/CD 自动化测试**
+6. **保持代码风格一致**
+7. **及时更新文档**
         `,
       },
     ],
