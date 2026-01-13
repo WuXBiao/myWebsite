@@ -12,7 +12,6 @@ USER=${2:-root}
 
 # 要上传的文件
 FILES=(
-  "docker-compose.yml"
   "nginx.conf"
   "deploy.sh"
   ".env.example"

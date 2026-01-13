@@ -36,6 +36,7 @@ docker run -d \
   -p 80:80 \
   -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf \
   -v $(pwd)/logs:/var/log/nginx \
+  -v /data/resume:/usr/share/nginx/html/resume:ro \
   $DOCKER_USERNAME/my-personal-blog:latest
 
 # 清理未使用的镜像

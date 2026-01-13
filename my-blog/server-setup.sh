@@ -18,14 +18,14 @@ echo "正在启动 Docker 服务..."
 systemctl start docker
 systemctl enable docker
 
-# 安装 Docker Compose
-echo "正在安装 Docker Compose..."
-curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-
 # 创建部署目录
 mkdir -p ~/my-blog
 mkdir -p ~/my-blog/logs
 
+# 创建简历目录
+mkdir -p /data/resume
+chmod 755 /data/resume
+
 echo "服务器初始化完成！"
-echo "请将 docker-compose.yml、nginx.conf 和 deploy.sh 上传到 ~/my-blog 目录。"
+echo "请将 nginx.conf 和 deploy.sh 上传到 ~/my-blog 目录。"
+echo "请将简历文件上传到 /data/resume/resume.pdf"
