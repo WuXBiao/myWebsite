@@ -8,6 +8,10 @@ on:
       - '.github/workflows/frontend-deploy.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -85,65 +89,25 @@ jobs:
               exit 1
             fi
 
-      - name: Create deployment issue
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '🚀 前端博客部署完成 - ' + new Date().toLocaleString('zh-CN'),
-              body: `
-            ## 🎉 前端博客部署成功！
-            
-            **部署信息：**
-            - 📅 部署时间：${new Date().toLocaleString('zh-CN')}
-            - 🔗 提交哈希：\`${{ github.sha }}\`
-            - 🌐 网站地址：http://你的服务器IP
-            - 📝 工作流：[${{ github.workflow }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
-            **部署状态：** ✅ 成功
-            
-            ---
-            *此 Issue 由前端 CI/CD 流水线自动创建*
-              `,
-              labels: ['frontend', 'deployment', 'success']
-            })
+      - name: Deployment success notification
+        run: |
+          echo "🎉 前端博客部署成功！"
+          echo "📅 部署时间: $(date)"
+          echo "🔗 提交哈希: ${{ github.sha }}"
+          echo "🌐 网站地址: http://你的服务器IP"
+          echo "📝 工作流: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         if: success()
 
-      - name: Create deployment failure issue
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '❌ 前端博客部署失败 - ' + new Date().toLocaleString('zh-CN'),
-              body: `
-            ## ⚠️ 前端博客部署失败！
-            
-            **部署信息：**
-            - 📅 部署时间：${new Date().toLocaleString('zh-CN')}
-            - 🔗 提交哈希：\`${{ github.sha }}\`
-            - 📝 工作流：[${{ github.workflow }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
-            **部署状态：** ❌ 失败
-            
-            **可能的原因：**
-            - 服务器连接问题
-            - Docker 镜像拉取失败
-            - 容器启动失败
-            - 健康检查未通过
-            
-            **解决方案：**
-            1. 检查服务器状态和网络连接
-            2. 查看 [GitHub Actions 日志](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            3. 手动登录服务器检查 Docker 状态
-            4. 重新运行部署工作流
-            
-            ---
-            *此 Issue 由前端 CI/CD 流水线自动创建*
-              `,
-              labels: ['frontend', 'deployment', 'failure', 'bug']
-            })
+      - name: Deployment failure notification
+        run: |
+          echo "❌ 前端博客部署失败！"
+          echo "📅 部署时间: $(date)"
+          echo "🔗 提交哈希: ${{ github.sha }}"
+          echo "📝 工作流: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo ""
+          echo "可能的原因："
+          echo "- 服务器连接问题"
+          echo "- Docker 镜像拉取失败"
+          echo "- 容器启动失败"
+          echo "- 健康检查未通过"
         if: failure()
