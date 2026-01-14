@@ -59,7 +59,7 @@ const router = createRouter({
 
 // 全局前置守卫，设置页面标题
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title ? `${to.meta.title} | 我的个人博客` : '我的个人博客';
+  document.title = to.meta.title ? `${to.meta.title} | biao 的空间站` : '我的个人博客';
   next();
 });
 
