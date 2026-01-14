@@ -7,7 +7,7 @@
             <div class="text-center mb-8">
               <div class="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4">
                 <img 
-                  src="https://via.placeholder.com/128" 
+                  src="@/assets/avatar.jpg" 
                   alt="个人头像" 
                   class="w-full h-full object-cover"
                 />
