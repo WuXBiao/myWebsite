@@ -94,7 +94,7 @@ jobs:
             
             sleep 10
             
-            if curl -f http://localhost; then
+            if curl -f https://localhost; then
               echo "✅ 部署成功！"
             else
               echo "❌ 部署失败！"
@@ -106,7 +106,7 @@ jobs:
           echo "🎉 前端博客部署成功！"
           echo "📅 部署时间: $(date)"
           echo "🔗 提交哈希: ${{ github.sha }}"
-          echo "🌐 网站地址: http://你的服务器IP"
+          echo "🌐 网站地址: https://你的服务器IP"
           echo "📝 工作流: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         if: success()
 
