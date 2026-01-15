@@ -1,11 +1,11 @@
-name: Frontend Blog - Build and Deploy
+name: Guayun Vue - Build and Deploy
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'my-blog/**'
-      - '.github/workflows/frontend-deploy.yml'
+      - 'guayun/guayun-vue/**'
+      - '.github/workflows/guayun-vue-deploy.yml'
   workflow_dispatch:
 
 permissions:
@@ -29,20 +29,20 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       
-      - name: Build and push frontend blog
+      - name: Build and push guayun-vue
         uses: docker/build-push-action@v4
         with:
-          context: ./my-blog
-          file: ./my-blog/Dockerfile
+          context: ./guayun/guayun-vue
+          file: ./guayun/guayun-vue/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/my-personal-blog:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/guayun-vue:${{ github.sha }}
           build-args: |
             BUILD_VERSION=${{ github.sha }}
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
             VCS_REF=${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-personal-blog:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-personal-blog:buildcache,mode=max
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/guayun-vue:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/guayun-vue:buildcache,mode=max
 
   deploy:
     needs: build-and-push
@@ -51,7 +51,7 @@ jobs:
     steps:
       - name: Log deployment start
         run: |
-          echo "🚀 开始部署前端博客到生产环境..."
+          echo "🚀 开始部署 Guayun Vue 到生产环境..."
           echo "📦 仓库: ${{ github.repository }}"
           echo "🔗 提交: ${{ github.sha }}"
           echo "⏰ 时间: $(date)"
@@ -64,37 +64,33 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            cd ~/my-blog
+            cd ~/guayun
             export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             export IMAGE_TAG=${{ github.sha }}
             
-            echo "拉取镜像: $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG"
-            docker pull $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG
+            echo "拉取镜像: $DOCKER_USERNAME/guayun-vue:$IMAGE_TAG"
+            docker pull $DOCKER_USERNAME/guayun-vue:$IMAGE_TAG
             
             echo "停止旧容器..."
-            docker stop my-personal-blog 2>/dev/null || true
-            docker rm my-personal-blog 2>/dev/null || true
+            docker stop guayun-vue 2>/dev/null || true
+            docker rm guayun-vue 2>/dev/null || true
             
             echo "创建 Docker 网络..."
             docker network create app-network 2>/dev/null || true
             
             echo "启动新容器..."
             docker run -d \
-              --name my-personal-blog \
+              --name guayun-vue \
               --restart always \
               --network app-network \
-              -p 80:80 \
-              -p 443:443 \
               -p 8081:8081 \
               -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf \
               -v $(pwd)/logs:/var/log/nginx \
-              -v /etc/ssl/www.yyi77.top.pem:/etc/ssl/www.yyi77.top.pem:ro \
-              -v /etc/ssl/www.yyi77.top.key:/etc/ssl/www.yyi77.top.key:ro \
-              $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG
+              $DOCKER_USERNAME/guayun-vue:$IMAGE_TAG
             
             sleep 10
             
-            if curl -f http://localhost; then
+            if curl -f http://localhost:8081; then
               echo "✅ 部署成功！"
             else
               echo "❌ 部署失败！"
@@ -103,16 +99,15 @@ jobs:
 
       - name: Deployment success notification
         run: |
-          echo "🎉 前端博客部署成功！"
+          echo "🎉 Guayun Vue 部署成功！"
           echo "📅 部署时间: $(date)"
           echo "🔗 提交哈希: ${{ github.sha }}"
-          echo "🌐 网站地址: http://你的服务器IP"
           echo "📝 工作流: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         if: success()
 
       - name: Deployment failure notification
         run: |
-          echo "❌ 前端博客部署失败！"
+          echo "❌ Guayun Vue 部署失败！"
           echo "📅 部署时间: $(date)"
           echo "🔗 提交哈希: ${{ github.sha }}"
           echo "📝 工作流: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
