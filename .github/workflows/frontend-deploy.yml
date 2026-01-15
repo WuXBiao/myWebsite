@@ -97,7 +97,7 @@ jobs:
             
             sleep 10
             
-            if curl -f http://localhost; then
+            if curl -f -k https://localhost; then
               echo "✅ 部署成功！"
             else
               echo "❌ 部署失败！"
