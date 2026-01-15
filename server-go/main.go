@@ -50,8 +50,11 @@ func main() {
 		})
 	})
 
-	// 启动服务器
-	if err := router.Run(":8080"); err != nil {
+	// 启动服务器（HTTPS）
+	certFile := "/etc/ssl/www.yyi77.top.pem"
+	keyFile := "/etc/ssl/www.yyi77.top.key"
+
+	if err := router.RunTLS(":8080", certFile, keyFile); err != nil {
 		fmt.Printf("Failed to start server: %v\n", err)
 	}
 }
