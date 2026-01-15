@@ -1,0 +1,120 @@
+name: Go Server - Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'server-go/**'
+      - '.github/workflows/server-go-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push Go server
+        uses: docker/build-push-action@v4
+        with:
+          context: ./server-go
+          file: ./server-go/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/my-go-server:${{ github.sha }}
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            VCS_REF=${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-go-server:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-go-server:buildcache,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Log deployment start
+        run: |
+          echo "🚀 开始部署 Go 服务器到生产环境..."
+          echo "📦 仓库: ${{ github.repository }}"
+          echo "🔗 提交: ${{ github.sha }}"
+          echo "⏰ 时间: $(date)"
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            cd ~/server-go
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            export IMAGE_TAG=${{ github.sha }}
+            
+            echo "拉取镜像: $DOCKER_USERNAME/my-go-server:$IMAGE_TAG"
+            docker pull $DOCKER_USERNAME/my-go-server:$IMAGE_TAG
+            
+            echo "停止旧容器..."
+            docker stop my-go-server 2>/dev/null || true
+            docker rm my-go-server 2>/dev/null || true
+            
+            echo "准备上传目录..."
+            mkdir -p $(pwd)/uploads
+            chmod 755 $(pwd)/uploads
+            
+            echo "启动新容器..."
+            docker run -d \
+              --name my-go-server \
+              --restart always \
+              -p 8080:8080 \
+              -v $(pwd)/uploads:/app/uploads \
+              $DOCKER_USERNAME/my-go-server:$IMAGE_TAG
+            
+            sleep 10
+            
+            if curl -f http://localhost:8080/api/health; then
+              echo "✅ 部署成功！"
+            else
+              echo "❌ 部署失败！"
+              exit 1
+            fi
+
+      - name: Deployment success notification
+        run: |
+          echo "🎉 Go 服务器部署成功！"
+          echo "📅 部署时间: $(date)"
+          echo "🔗 提交哈希: ${{ github.sha }}"
+          echo "🌐 服务地址: http://你的服务器IP:8080"
+          echo "📝 工作流: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        if: success()
+
+      - name: Deployment failure notification
+        run: |
+          echo "❌ Go 服务器部署失败！"
+          echo "📅 部署时间: $(date)"
+          echo "🔗 提交哈希: ${{ github.sha }}"
+          echo "📝 工作流: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo ""
+          echo "可能的原因："
+          echo "- 服务器连接问题"
+          echo "- Docker 镜像拉取失败"
+          echo "- 容器启动失败"
+          echo "- 健康检查未通过"
+        if: failure()
