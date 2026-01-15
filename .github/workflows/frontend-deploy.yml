@@ -75,6 +75,9 @@ jobs:
             docker stop my-personal-blog 2>/dev/null || true
             docker rm my-personal-blog 2>/dev/null || true
             
+            echo "释放被占用的端口..."
+            docker ps -a | grep -E ':(80|443|8081)' | awk '{print $1}' | xargs -r docker rm -f 2>/dev/null || true
+            
             echo "创建 Docker 网络..."
             docker network create app-network 2>/dev/null || true
             
@@ -94,7 +97,7 @@ jobs:
             
             sleep 10
             
-            if curl -f https://localhost; then
+            if curl -f http://localhost; then
               echo "✅ 部署成功！"
             else
               echo "❌ 部署失败！"
@@ -106,7 +109,7 @@ jobs:
           echo "🎉 前端博客部署成功！"
           echo "📅 部署时间: $(date)"
           echo "🔗 提交哈希: ${{ github.sha }}"
-          echo "🌐 网站地址: https://你的服务器IP"
+          echo "🌐 网站地址: http://你的服务器IP"
           echo "📝 工作流: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         if: success()
 
