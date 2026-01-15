@@ -95,27 +95,12 @@ jobs:
               -v /etc/ssl/www.yyi77.top.key:/etc/ssl/www.yyi77.top.key:ro \
               $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG
             
-            echo "等待容器启动..."
-            sleep 20
-            
-            echo "检查容器状态..."
-            docker ps | grep my-personal-blog || (echo "容器未运行"; docker logs my-personal-blog; exit 1)
-            
-            echo "执行健康检查..."
-            for i in {1..30}; do
-              if curl -f -k https://localhost 2>/dev/null; then
-                echo "✅ 容器已就绪"
-                break
-              fi
-              echo "等待中... ($i/30)"
-              sleep 1
-            done
+            sleep 10
             
             if curl -f -k https://localhost; then
               echo "✅ 部署成功！"
             else
               echo "❌ 部署失败！"
-              docker logs my-personal-blog
               exit 1
             fi
 
