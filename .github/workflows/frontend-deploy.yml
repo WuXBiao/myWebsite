@@ -75,9 +75,6 @@ jobs:
             docker stop my-personal-blog 2>/dev/null || true
             docker rm my-personal-blog 2>/dev/null || true
             
-            echo "释放被占用的端口..."
-            docker ps -a | grep -E ':(80|443|8081)' | awk '{print $1}' | xargs -r docker rm -f 2>/dev/null || true
-            
             echo "创建 Docker 网络..."
             docker network create app-network 2>/dev/null || true
             
