@@ -79,10 +79,14 @@ jobs:
             mkdir -p $(pwd)/uploads
             chmod 755 $(pwd)/uploads
             
+            echo "创建 Docker 网络..."
+            docker network create app-network 2>/dev/null || true
+            
             echo "启动新容器..."
             docker run -d \
               --name my-go-server \
               --restart always \
+              --network app-network \
               -p 8080:8080 \
               -v $(pwd)/uploads:/app/uploads \
               $DOCKER_USERNAME/my-go-server:$IMAGE_TAG
