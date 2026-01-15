@@ -85,7 +85,6 @@ jobs:
               --network app-network \
               -p 80:80 \
               -p 443:443 \
-              -p 8081:8081 \
               -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf \
               -v $(pwd)/logs:/var/log/nginx \
               -v /etc/ssl/www.yyi77.top.pem:/etc/ssl/www.yyi77.top.pem:ro \
