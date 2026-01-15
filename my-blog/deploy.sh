@@ -39,8 +39,11 @@ docker run -d \
   --restart always \
   --network app-network \
   -p 80:80 \
+  -p 443:443 \
   -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf \
   -v $(pwd)/logs:/var/log/nginx \
+  -v /etc/ssl/certs/www.yyi77.top.pem:/etc/nginx/ssl/www.yyi77.top.pem:ro \
+  -v /etc/ssl/certs/www.yyi77.top.key:/etc/nginx/ssl/www.yyi77.top.key:ro \
   $DOCKER_USERNAME/my-personal-blog:latest
 
 # 清理未使用的镜像
