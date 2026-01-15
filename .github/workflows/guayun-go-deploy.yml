@@ -88,6 +88,7 @@ jobs:
               --restart always \
               --network app-network \
               -p 8082:8082 \
+              -v $(pwd)/config.yaml:/app/config.yaml:ro \
               -v $(pwd)/uploads:/app/uploads \
               $DOCKER_USERNAME/guayun-go:$IMAGE_TAG
             
