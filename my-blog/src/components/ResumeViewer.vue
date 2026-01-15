@@ -110,7 +110,9 @@ const fetchResume = async () => {
 
   try {
     // 直接构建下载 URL，验证文件是否存在
-    const resumeUrl = `${API_BASE_URL}/api/download/resume.pdf`
+    // 生产环境：API_BASE_URL 为 /api，所以路径是 /api/download/resume.pdf
+    // 开发环境：API_BASE_URL 为 http://localhost:8080，所以路径是 http://localhost:8080/api/download/resume.pdf
+    const resumeUrl = `${API_BASE_URL}/download/resume.pdf`
     
     // 发送 HEAD 请求验证文件存在
     const response = await fetch(resumeUrl, { method: 'HEAD' })
