@@ -95,7 +95,7 @@ jobs:
             
             sleep 10
             
-            if curl -f http://localhost:8080/api/health; then
+            if curl -f -k https://localhost:8080/api/health; then
               echo "✅ 部署成功！"
             else
               echo "❌ 部署失败！"
