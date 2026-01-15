@@ -111,6 +111,7 @@ const fetchResume = async () => {
   try {
     // 构建下载 URL
     const resumeUrl = `${API_BASE_URL}/download/resume.pdf`
+    // API_BASE_URL 已包含 /api 前缀，所以这里直接拼接即可
     
     // 下载 PDF 文件
     const response = await fetch(resumeUrl)

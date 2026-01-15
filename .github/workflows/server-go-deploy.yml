@@ -88,6 +88,7 @@ jobs:
               --restart always \
               --network app-network \
               -p 8080:8080 \
+              -e ENV=production \
               -v $(pwd)/uploads:/app/uploads \
               -v /etc/ssl/www.yyi77.top.pem:/etc/ssl/www.yyi77.top.pem:ro \
               -v /etc/ssl/www.yyi77.top.key:/etc/ssl/www.yyi77.top.key:ro \
@@ -107,7 +108,6 @@ jobs:
           echo "🎉 Go 服务器部署成功！"
           echo "📅 部署时间: $(date)"
           echo "🔗 提交哈希: ${{ github.sha }}"
-          echo "🌐 服务地址: http://你的服务器IP:8080"
           echo "📝 工作流: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         if: success()
 

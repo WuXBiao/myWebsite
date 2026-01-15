@@ -6,6 +6,11 @@
           <p class="text-sm text-gray-600 dark:text-gray-400">
             © {{ currentYear }} biao 的空间站. 保留所有权利.
           </p>
+          <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+            <a href="https://beian.miit.gov.cn/" target="_blank" class="hover:text-primary transition-colors">
+              陕ICP备2026001167号-1
+            </a>
+          </p>
         </div>
         
         <div class="flex space-x-6">
