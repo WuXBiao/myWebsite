@@ -64,22 +64,85 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
+            set -e
             cd ~/my-blog
             export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             export IMAGE_TAG=${{ github.sha }}
             
+            echo "========== 部署信息 =========="
+            echo "当前目录: $(pwd)"
+            echo "Docker 用户名: $DOCKER_USERNAME"
+            echo "镜像标签: $IMAGE_TAG"
+            echo "时间: $(date)"
+            echo ""
+            
+            echo "========== 检查环境 =========="
+            echo "Docker 版本:"
+            docker --version
+            echo ""
+            echo "Docker 镜像列表:"
+            docker images | head -10
+            echo ""
+            
+            echo "========== 拉取镜像 =========="
             echo "拉取镜像: $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG"
-            docker pull $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG
+            if docker pull $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG; then
+              echo "✅ 镜像拉取成功"
+            else
+              echo "❌ 镜像拉取失败"
+              exit 1
+            fi
+            echo ""
             
-            echo "停止旧容器..."
-            docker stop my-personal-blog 2>/dev/null || true
-            docker rm my-personal-blog 2>/dev/null || true
+            echo "========== 停止旧容器 =========="
+            if docker stop my-personal-blog 2>/dev/null; then
+              echo "✅ 旧容器已停止"
+            else
+              echo "⚠️  旧容器不存在或已停止"
+            fi
             
-            echo "创建 Docker 网络..."
-            docker network create app-network 2>/dev/null || true
+            if docker rm my-personal-blog 2>/dev/null; then
+              echo "✅ 旧容器已删除"
+            else
+              echo "⚠️  旧容器不存在"
+            fi
+            echo ""
             
-            echo "启动新容器..."
-            docker run -d \
+            echo "========== 检查证书文件 =========="
+            if [ -f /etc/ssl/certs/www.yyi77.top.pem ]; then
+              echo "✅ 证书文件存在: /etc/ssl/certs/www.yyi77.top.pem"
+            else
+              echo "❌ 证书文件不存在: /etc/ssl/certs/www.yyi77.top.pem"
+            fi
+            
+            if [ -f /etc/ssl/certs/www.yyi77.top.key ]; then
+              echo "✅ 密钥文件存在: /etc/ssl/certs/www.yyi77.top.key"
+            else
+              echo "❌ 密钥文件不存在: /etc/ssl/certs/www.yyi77.top.key"
+            fi
+            echo ""
+            
+            echo "========== 检查 Nginx 配置 =========="
+            if [ -f nginx.conf ]; then
+              echo "✅ Nginx 配置文件存在"
+              echo "配置文件内容预览:"
+              head -20 nginx.conf
+            else
+              echo "❌ Nginx 配置文件不存在"
+              exit 1
+            fi
+            echo ""
+            
+            echo "========== 创建 Docker 网络 =========="
+            if docker network create app-network 2>/dev/null; then
+              echo "✅ Docker 网络已创建"
+            else
+              echo "⚠️  Docker 网络已存在"
+            fi
+            echo ""
+            
+            echo "========== 启动新容器 =========="
+            CONTAINER_ID=$(docker run -d \
               --name my-personal-blog \
               --restart always \
               --network app-network \
@@ -89,16 +152,45 @@ jobs:
               -v $(pwd)/logs:/var/log/nginx \
               -v /etc/ssl/certs/www.yyi77.top.pem:/etc/nginx/ssl/www.yyi77.top.pem:ro \
               -v /etc/ssl/certs/www.yyi77.top.key:/etc/nginx/ssl/www.yyi77.top.key:ro \
-              $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG
+              $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG)
             
-            sleep 10
-            
-            if curl -f http://localhost; then
-              echo "✅ 部署成功！"
+            if [ -n "$CONTAINER_ID" ]; then
+              echo "✅ 容器启动成功，ID: $CONTAINER_ID"
             else
-              echo "❌ 部署失败！"
+              echo "❌ 容器启动失败"
               exit 1
             fi
+            echo ""
+            
+            echo "========== 等待容器就绪 =========="
+            sleep 10
+            
+            echo "========== 检查容器状态 =========="
+            docker ps | grep my-personal-blog
+            echo ""
+            
+            echo "========== 检查容器日志 =========="
+            echo "最近的容器日志:"
+            docker logs --tail 20 my-personal-blog || echo "⚠️  无法获取容器日志"
+            echo ""
+            
+            echo "========== 健康检查 =========="
+            if curl -f http://localhost 2>/dev/null; then
+              echo "✅ HTTP 健康检查成功"
+            else
+              echo "⚠️  HTTP 健康检查失败，尝试 HTTPS..."
+              if curl -f -k https://localhost 2>/dev/null; then
+                echo "✅ HTTPS 健康检查成功"
+              else
+                echo "❌ 健康检查失败"
+                echo "容器日志:"
+                docker logs my-personal-blog
+                exit 1
+              fi
+            fi
+            echo ""
+            echo "========== 部署完成 =========="
+            echo "✅ 部署成功！"
 
       - name: Deployment success notification
         run: |
