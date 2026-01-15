@@ -109,21 +109,25 @@ const fetchResume = async () => {
   resumePath.value = null
 
   try {
-    // 直接构建下载 URL，验证文件是否存在
-    // 生产环境：API_BASE_URL 为 /api，所以路径是 /api/download/resume.pdf
-    // 开发环境：API_BASE_URL 为 http://localhost:8080，所以路径是 http://localhost:8080/api/download/resume.pdf
+    // 构建下载 URL
     const resumeUrl = `${API_BASE_URL}/download/resume.pdf`
     
-    // 发送 HEAD 请求验证文件存在
-    const response = await fetch(resumeUrl, { method: 'HEAD' })
+    // 下载 PDF 文件
+    const response = await fetch(resumeUrl)
     
     if (!response.ok) {
       throw new Error(`文件不存在或无法访问 (HTTP ${response.status})`)
     }
 
-    // 文件存在，设置下载 URL
+    // 获取 PDF 文件内容
+    const blob = await response.blob()
+    
+    // 创建 Blob URL 用于在浏览器中显示
+    const blobUrl = URL.createObjectURL(blob)
+    
+    // 设置显示 URL 和下载信息
     currentFileName.value = 'resume.pdf'
-    resumePath.value = resumeUrl
+    resumePath.value = blobUrl
   } catch (err) {
     error.value = `加载失败: ${err.message}`
     console.error('Failed to load resume:', err)
