@@ -75,6 +75,10 @@ jobs:
             docker stop my-personal-blog 2>/dev/null || true
             docker rm my-personal-blog 2>/dev/null || true
             
+            echo "准备简历目录..."
+            mkdir -p /data/resume
+            chmod 755 /data/resume
+            
             echo "启动新容器..."
             docker run -d \
               --name my-personal-blog \
