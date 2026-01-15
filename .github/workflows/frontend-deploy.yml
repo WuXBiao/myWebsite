@@ -75,10 +75,6 @@ jobs:
             docker stop my-personal-blog 2>/dev/null || true
             docker rm my-personal-blog 2>/dev/null || true
             
-            echo "准备简历目录..."
-            mkdir -p /data/resume
-            chmod 755 /data/resume
-            
             echo "创建 Docker 网络..."
             docker network create app-network 2>/dev/null || true
             
@@ -90,7 +86,6 @@ jobs:
               -p 80:80 \
               -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf \
               -v $(pwd)/logs:/var/log/nginx \
-              -v /data/resume:/usr/share/nginx/html/resume:ro \
               $DOCKER_USERNAME/my-personal-blog:$IMAGE_TAG
             
             sleep 10

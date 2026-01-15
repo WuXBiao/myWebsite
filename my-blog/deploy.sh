@@ -28,15 +28,19 @@ echo "停止旧容器..."
 docker stop my-personal-blog 2>/dev/null || true
 docker rm my-personal-blog 2>/dev/null || true
 
+# 创建 Docker 网络
+echo "创建 Docker 网络..."
+docker network create app-network 2>/dev/null || true
+
 # 启动新容器
 echo "启动新容器..."
 docker run -d \
   --name my-personal-blog \
   --restart always \
+  --network app-network \
   -p 80:80 \
   -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf \
   -v $(pwd)/logs:/var/log/nginx \
-  -v /data/resume:/usr/share/nginx/html/resume:ro \
   $DOCKER_USERNAME/my-personal-blog:latest
 
 # 清理未使用的镜像
