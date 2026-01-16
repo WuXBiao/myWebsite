@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -50,23 +51,12 @@ func main() {
 		})
 	})
 
-	// 启动服务器
-	// 生产环境使用 HTTPS，本地开发使用 HTTP
-	certFile := "/etc/ssl/www.yyi77.top.pem"
-	keyFile := "/etc/ssl/www.yyi77.top.key"
-
-	// 检查证书文件是否存在
-	if _, err := os.Stat(certFile); err == nil && os.Getenv("ENV") == "production" {
-		// 生产环境：使用 HTTPS
-		if err := router.RunTLS(":8080", certFile, keyFile); err != nil {
-			fmt.Printf("Failed to start server: %v\n", err)
-		}
-	} else {
-		// 开发环境：使用 HTTP
-		if err := router.Run(":8080"); err != nil {
-			fmt.Printf("Failed to start server: %v\n", err)
-		}
+	// 生产环境：使用 HTTP
+	log.Println("Starting server on :8080...")
+	if err := router.Run(":8080"); err != nil {
+		fmt.Printf("Failed to start server: %v\n", err)
 	}
+
 }
 
 // corsMiddleware 处理 CORS 跨域请求
