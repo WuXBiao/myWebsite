@@ -90,13 +90,11 @@ jobs:
               -p 8080:8080 \
               -e ENV=production \
               -v $(pwd)/uploads:/app/uploads \
-              -v /etc/ssl/www.yyi77.top.pem:/etc/ssl/www.yyi77.top.pem:ro \
-              -v /etc/ssl/www.yyi77.top.key:/etc/ssl/www.yyi77.top.key:ro \
               $DOCKER_USERNAME/my-go-server:$IMAGE_TAG
             
             sleep 10
             
-            if curl -f -k https://localhost:8080/api/health; then
+            if curl -f http://localhost:8080/api/health; then
               echo "✅ 部署成功！"
             else
               echo "❌ 部署失败！"
