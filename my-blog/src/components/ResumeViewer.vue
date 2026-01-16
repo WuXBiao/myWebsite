@@ -97,7 +97,13 @@ import { ref, onMounted } from 'vue'
 const loading = ref(true)
 const error = ref(null)
 const resumePath = ref(null)
-const currentFileName = ref('resume.pdf')
+
+// ========== 配置区域：只需修改这里 ==========
+const RESUME_FILE_NAME = 'resume.pdf'  // 后端文件名
+const DOWNLOAD_FILE_NAME = 'Golang_西安邮电大学_吴旭彪.pdf'  // 下载时的文件名
+// ==========================================
+
+const currentFileName = ref(DOWNLOAD_FILE_NAME)
 
 // 后端服务地址（需要根据实际情况修改）
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
@@ -110,7 +116,7 @@ const fetchResume = async () => {
 
   try {
     // 构建下载 URL
-    const resumeUrl = `${API_BASE_URL}/download/resume.pdf`
+    const resumeUrl = `${API_BASE_URL}/download/${RESUME_FILE_NAME}`
     // API_BASE_URL 已包含 /api 前缀，所以这里直接拼接即可
     
     // 下载 PDF 文件
@@ -126,8 +132,7 @@ const fetchResume = async () => {
     // 创建 Blob URL 用于在浏览器中显示
     const blobUrl = URL.createObjectURL(blob)
     
-    // 设置显示 URL 和下载信息
-    currentFileName.value = 'resume.pdf'
+    // 设置显示 URL
     resumePath.value = blobUrl
   } catch (err) {
     error.value = `加载失败: ${err.message}`
