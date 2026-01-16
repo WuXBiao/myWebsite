@@ -22,6 +22,30 @@
 
     <!-- 成功状态 -->
     <div v-else-if="resumePath">
+      <!-- 操作按钮放到顶部 -->
+      <div class="action-buttons">
+        <a 
+          :href="resumePath" 
+          :download="currentFileName"
+          class="btn btn-primary"
+        >
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          下载简历
+        </a>
+        <a 
+          :href="resumePath" 
+          target="_blank"
+          class="btn btn-secondary"
+        >
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+          </svg>
+          新窗口打开
+        </a>
+      </div>
+
       <!-- PDF 预览区域 -->
       <div class="pdf-viewer">
         <object
@@ -47,30 +71,6 @@
             </a>
           </div>
         </object>
-      </div>
-
-      <!-- 操作按钮放到底部 -->
-      <div class="action-buttons">
-        <a 
-          :href="resumePath" 
-          :download="currentFileName"
-          class="btn btn-primary"
-        >
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-          </svg>
-          下载简历
-        </a>
-        <a 
-          :href="resumePath" 
-          target="_blank"
-          class="btn btn-secondary"
-        >
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
-          </svg>
-          新窗口打开
-        </a>
       </div>
     </div>
 
@@ -153,7 +153,7 @@ onMounted(() => {
 .action-buttons {
   display: flex;
   gap: 1rem;
-  margin-top: 1rem;
+  margin-bottom: 1.5rem;
   justify-content: center;
   flex-wrap: wrap;
 }
