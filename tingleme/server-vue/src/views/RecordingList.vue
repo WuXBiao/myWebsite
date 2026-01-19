@@ -23,7 +23,6 @@
       :data="recordings"
       stripe
       style="width: 100%"
-      @row-dblclick="handleRowDoubleClick"
     >
       <el-table-column prop="title" label="标题" width="200"></el-table-column>
       <el-table-column prop="description" label="描述" width="250"></el-table-column>
@@ -45,10 +44,18 @@
           {{ formatDate(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="280">
+      <el-table-column label="播放" width="320">
         <template #default="{ row }">
-          <el-button size="small" @click="playRecording(row)">播放</el-button>
-          <el-button size="small" type="success" @click="downloadRecording(row)">下载</el-button>
+          <audio 
+            :src="getPlayUrl(row)" 
+            controls 
+            class="audio-player"
+            preload="metadata"
+          ></audio>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="100">
+        <template #default="{ row }">
           <el-button size="small" type="danger" @click="deleteRecording(row.id)">删除</el-button>
         </template>
       </el-table-column>
@@ -66,9 +73,6 @@
       style="margin-top: 20px; text-align: center;"
     >
     </el-pagination>
-
-    <!-- 音频播放器 -->
-    <audio ref="audioPlayer" controls style="display: none;"></audio>
   </div>
 </template>
 
@@ -131,17 +135,9 @@ export default {
       this.pagination.currentPage = newPage;
       this.fetchRecordings();
     },
-    async playRecording(recording) {
-      try {
-        const audioUrl = `http://localhost:8080/api/recordings/play/${recording.id}?t=${new Date().getTime()}`;
-        this.$refs.audioPlayer.src = audioUrl;
-        this.$refs.audioPlayer.load(); // 加载音频
-        await this.$refs.audioPlayer.play();
-        this.$message.success('开始播放');
-      } catch (error) {
-        console.error('播放录音失败:', error);
-        this.$message.error('播放失败: ' + error.message);
-      }
+    getPlayUrl(recording) {
+      const encodedFileName = encodeURIComponent(recording.fileName);
+      return `http://localhost:8080/api/recordings/play/${recording.id}/${encodedFileName}`;
     },
     async deleteRecording(id) {
       try {
@@ -152,19 +148,6 @@ export default {
         console.error('删除录音失败:', error);
         this.$message.error('删除失败');
       }
-    },
-    downloadRecording(recording) {
-      const downloadUrl = recordingApi.getDownloadUrl(recording.id);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = recording.fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      this.$message.success('开始下载');
-    },
-    handleRowDoubleClick(row) {
-      this.playRecording(row);
     },
     formatFileSize(size) {
       if (size === undefined || size === null) return '未知';
@@ -196,5 +179,10 @@ export default {
   padding: 20px;
   background-color: #f5f5f5;
   border-radius: 4px;
+}
+
+.audio-player {
+  height: 36px;
+  width: 280px;
 }
 </style>

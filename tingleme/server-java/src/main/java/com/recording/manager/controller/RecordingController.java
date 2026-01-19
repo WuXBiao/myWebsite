@@ -88,38 +88,81 @@ public class RecordingController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRecording(@PathVariable Long id) {
         recordingService.deleteRecording(id);
-        return ResponseEntity.ok().body(Map.of("message", "录音删除成功"));
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "录音删除成功");
+        return ResponseEntity.ok().body(response);
     }
 
-    // 播放录音
-    @GetMapping("/play/{id}")
+    // 播放录音（支持两种 URL 格式）
+    @GetMapping(value = {"/play/{id}", "/play/{id}/{fileName}"})
     public ResponseEntity<Resource> playRecording(@PathVariable Long id, HttpServletRequest request) {
-        String filePath = recordingService.getRecordingFilePath(id);
-        if (filePath == null) {
-            return ResponseEntity.notFound().build();
-        }
+        return recordingService.getRecordingById(id)
+                .map(recording -> {
+                    String filePath = recording.getFilePath();
+                    Resource resource = new FileSystemResource(filePath);
+                    
+                    if (!resource.exists()) {
+                        return ResponseEntity.notFound().<Resource>build();
+                    }
 
-        Resource resource = new FileSystemResource(filePath);
-        if (!resource.exists()) {
-            return ResponseEntity.notFound().build();
-        }
+                    // 根据文件扩展名确定 MIME 类型
+                    String contentType = getAudioContentType(filePath);
+                    
+                    // 如果无法通过扩展名确定，尝试通过 ServletContext 获取
+                    if (contentType == null) {
+                        try {
+                            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+                        } catch (IOException ex) {
+                            // 忽略异常
+                        }
+                    }
 
-        // 尝试确定文件的 MIME 类型
-        String contentType = null;
-        try {
-            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
-        } catch (IOException ex) {
-            // 如果无法确定内容类型，则使用默认值
-        }
+                    // 默认为 MP3 格式
+                    if (contentType == null) {
+                        contentType = "audio/mpeg";
+                    }
 
-        if (contentType == null) {
-            contentType = "audio/mpeg"; // 默认为 MP3 格式
-        }
+                    // 处理中文文件名
+                    String fileName = recording.getFileName();
+                    String encodedFileName;
+                    try {
+                        encodedFileName = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
+                    } catch (UnsupportedEncodingException e) {
+                        encodedFileName = fileName;
+                    }
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.parseMediaType(contentType))
+                            .header(HttpHeaders.CONTENT_DISPOSITION, 
+                                    "inline; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName)
+                            .body(resource);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // 根据文件扩展名获取音频 MIME 类型
+    private String getAudioContentType(String filePath) {
+        if (filePath == null) return null;
+        
+        String lowerPath = filePath.toLowerCase();
+        if (lowerPath.endsWith(".mp3")) {
+            return "audio/mpeg";
+        } else if (lowerPath.endsWith(".wav")) {
+            return "audio/wav";
+        } else if (lowerPath.endsWith(".ogg")) {
+            return "audio/ogg";
+        } else if (lowerPath.endsWith(".m4a")) {
+            return "audio/mp4";
+        } else if (lowerPath.endsWith(".aac")) {
+            return "audio/aac";
+        } else if (lowerPath.endsWith(".flac")) {
+            return "audio/flac";
+        } else if (lowerPath.endsWith(".wma")) {
+            return "audio/x-ms-wma";
+        } else if (lowerPath.endsWith(".webm")) {
+            return "audio/webm";
+        }
+        return null;
     }
 
     // 下载录音
