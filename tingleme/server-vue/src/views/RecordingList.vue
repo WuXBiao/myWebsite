@@ -45,9 +45,10 @@
           {{ formatDate(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200">
+      <el-table-column label="操作" width="280">
         <template #default="{ row }">
           <el-button size="small" @click="playRecording(row)">播放</el-button>
+          <el-button size="small" type="success" @click="downloadRecording(row)">下载</el-button>
           <el-button size="small" type="danger" @click="deleteRecording(row.id)">删除</el-button>
         </template>
       </el-table-column>
@@ -151,6 +152,16 @@ export default {
         console.error('删除录音失败:', error);
         this.$message.error('删除失败');
       }
+    },
+    downloadRecording(recording) {
+      const downloadUrl = recordingApi.getDownloadUrl(recording.id);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = recording.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      this.$message.success('开始下载');
     },
     handleRowDoubleClick(row) {
       this.playRecording(row);

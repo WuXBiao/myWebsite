@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -118,5 +120,34 @@ public class RecordingController {
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
+    }
+
+    // 下载录音
+    @GetMapping("/download/{id}")
+    public ResponseEntity<Resource> downloadRecording(@PathVariable Long id) {
+        return recordingService.getRecordingById(id)
+                .map(recording -> {
+                    String filePath = recording.getFilePath();
+                    Resource resource = new FileSystemResource(filePath);
+                    
+                    if (!resource.exists()) {
+                        return ResponseEntity.notFound().<Resource>build();
+                    }
+                    
+                    String fileName = recording.getFileName();
+                    String encodedFileName;
+                    try {
+                        encodedFileName = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
+                    } catch (UnsupportedEncodingException e) {
+                        encodedFileName = fileName;
+                    }
+                    
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, 
+                                    "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName)
+                            .body(resource);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }

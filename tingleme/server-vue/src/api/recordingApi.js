@@ -76,6 +76,11 @@ export const recordingApi = {
     return apiClient.get(`/recordings/play/${id}`, {
       responseType: 'blob' // 用于处理音频流
     });
+  },
+
+  // 下载录音
+  getDownloadUrl(id) {
+    return `http://localhost:8080/api/recordings/download/${id}`;
   }
 };
 

@@ -62,14 +62,28 @@ public class RecordingServiceImpl implements RecordingService {
         Path uploadDir = Paths.get(appProperties.getPath());
         Files.createDirectories(uploadDir);
 
-        // 生成唯一文件名
+        // 使用原始文件名，如果有重名则添加时间戳
         String originalFileName = file.getOriginalFilename();
-        String fileExtension = "";
-        if (originalFileName != null && originalFileName.contains(".")) {
-            fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        if (originalFileName == null || originalFileName.isEmpty()) {
+            originalFileName = "recording_" + System.currentTimeMillis();
         }
-        String uniqueFileName = UUID.randomUUID().toString() + fileExtension;
-        String filePath = uploadDir.toString() + "/" + uniqueFileName;
+        
+        String fileName = originalFileName;
+        String filePath = uploadDir.toString() + "/" + fileName;
+        
+        // 检查文件是否已存在，如果存在则添加时间戳
+        File targetFile = new File(filePath);
+        if (targetFile.exists()) {
+            String nameWithoutExt = originalFileName;
+            String extension = "";
+            int dotIndex = originalFileName.lastIndexOf(".");
+            if (dotIndex > 0) {
+                nameWithoutExt = originalFileName.substring(0, dotIndex);
+                extension = originalFileName.substring(dotIndex);
+            }
+            fileName = nameWithoutExt + "_" + System.currentTimeMillis() + extension;
+            filePath = uploadDir.toString() + "/" + fileName;
+        }
 
         // 保存文件
         try (InputStream inputStream = file.getInputStream();
@@ -85,7 +99,7 @@ public class RecordingServiceImpl implements RecordingService {
         Recording recording = new Recording();
         recording.setTitle(title);
         recording.setDescription(description);
-        recording.setFileName(originalFileName != null ? originalFileName : uniqueFileName);
+        recording.setFileName(fileName);
         recording.setFilePath(filePath);
         recording.setFileSize(file.getSize());
         recording.setUploader(uploader);
