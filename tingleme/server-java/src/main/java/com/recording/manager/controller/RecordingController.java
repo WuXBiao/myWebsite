@@ -1,6 +1,8 @@
 package com.recording.manager.controller;
 
 import com.recording.manager.entity.Recording;
+import com.recording.manager.security.RequireRole;
+import com.recording.manager.security.Role;
 import com.recording.manager.service.RecordingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -68,8 +70,9 @@ public class RecordingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 上传录音
+    // 上传录音（上传者、管理员可操作）
     @PostMapping("/upload")
+    @RequireRole({Role.UPLOADER, Role.ADMIN})
     public ResponseEntity<?> uploadRecording(
             @RequestParam("file") MultipartFile file,
             @RequestParam("title") String title,
@@ -84,8 +87,9 @@ public class RecordingController {
         }
     }
 
-    // 删除录音
+    // 删除录音（上传者、管理员可操作）
     @DeleteMapping("/{id}")
+    @RequireRole({Role.UPLOADER, Role.ADMIN})
     public ResponseEntity<?> deleteRecording(@PathVariable Long id) {
         recordingService.deleteRecording(id);
         Map<String, String> response = new HashMap<>();
@@ -165,8 +169,9 @@ public class RecordingController {
         return null;
     }
 
-    // 下载录音
+    // 下载录音（用户、管理员可操作）
     @GetMapping("/download/{id}")
+    @RequireRole({Role.USER, Role.ADMIN})
     public ResponseEntity<Resource> downloadRecording(@PathVariable Long id) {
         return recordingService.getRecordingById(id)
                 .map(recording -> {

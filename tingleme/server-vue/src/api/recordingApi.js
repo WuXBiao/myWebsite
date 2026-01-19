@@ -6,11 +6,24 @@ const apiClient = axios.create({
   timeout: 30000, // 请求超时时间
 });
 
+// 获取当前工号
+export const getCurrentEmployeeId = () => {
+  return localStorage.getItem('employeeId') || '';
+};
+
+// 设置当前工号
+export const setCurrentEmployeeId = (employeeId) => {
+  localStorage.setItem('employeeId', employeeId);
+};
+
 // 请求拦截器
 apiClient.interceptors.request.use(
   config => {
-    // 可以在这里添加认证 token
-    // config.headers.Authorization = `Bearer ${getToken()}`;
+    // 添加工号到请求头
+    const employeeId = getCurrentEmployeeId();
+    if (employeeId) {
+      config.headers['X-Employee-Id'] = employeeId;
+    }
     return config;
   },
   error => {
