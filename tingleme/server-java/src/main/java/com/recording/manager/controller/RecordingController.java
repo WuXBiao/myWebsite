@@ -4,6 +4,7 @@ import com.recording.manager.entity.Recording;
 import com.recording.manager.security.RequireRole;
 import com.recording.manager.security.Role;
 import com.recording.manager.service.RecordingService;
+import com.recording.manager.service.StreamingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -31,6 +32,9 @@ public class RecordingController {
     @Autowired
     private RecordingService recordingService;
 
+    @Autowired
+    private StreamingService streamingService;
+
     // 分页获取录音列表
     @GetMapping
     public ResponseEntity<Map<String, Object>> getRecordings(
@@ -40,7 +44,6 @@ public class RecordingController {
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String uploader) {
-        
         Sort sort = sortDir.equalsIgnoreCase("asc") ? 
                 Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -97,26 +100,25 @@ public class RecordingController {
         return ResponseEntity.ok().body(response);
     }
 
-    // 播放录音（支持两种 URL 格式）
+    // 播放录音（支持 Range 分片请求，支持两种 URL 格式）
     @GetMapping(value = {"/play/{id}", "/play/{id}/{fileName}"})
-    public ResponseEntity<Resource> playRecording(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<?> playRecording(
+            @PathVariable Long id, 
+            @RequestHeader(value = "Range", required = false) String rangeHeader,
+            HttpServletRequest request) {
+        
         return recordingService.getRecordingById(id)
                 .map(recording -> {
                     String filePath = recording.getFilePath();
-                    Resource resource = new FileSystemResource(filePath);
                     
-                    if (!resource.exists()) {
-                        return ResponseEntity.notFound().<Resource>build();
-                    }
-
                     // 根据文件扩展名确定 MIME 类型
                     String contentType = getAudioContentType(filePath);
                     
                     // 如果无法通过扩展名确定，尝试通过 ServletContext 获取
                     if (contentType == null) {
                         try {
-                            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
-                        } catch (IOException ex) {
+                            contentType = request.getServletContext().getMimeType(filePath);
+                        } catch (Exception ex) {
                             // 忽略异常
                         }
                     }
@@ -126,20 +128,8 @@ public class RecordingController {
                         contentType = "audio/mpeg";
                     }
 
-                    // 处理中文文件名
-                    String fileName = recording.getFileName();
-                    String encodedFileName;
-                    try {
-                        encodedFileName = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
-                    } catch (UnsupportedEncodingException e) {
-                        encodedFileName = fileName;
-                    }
-
-                    return ResponseEntity.ok()
-                            .contentType(MediaType.parseMediaType(contentType))
-                            .header(HttpHeaders.CONTENT_DISPOSITION, 
-                                    "inline; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName)
-                            .body(resource);
+                    // 使用流媒体服务处理 Range 请求
+                    return streamingService.buildRangeResponse(filePath, rangeHeader, contentType);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
