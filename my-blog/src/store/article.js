@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
 
+const STORAGE_KEY = 'my_blog_articles';
+
 export const useArticleStore = defineStore('article', {
   state: () => ({
     articles: [
@@ -1180,6 +1182,33 @@ jobs:
       { id: 'article', name: '文章', icon: 'file-text' },
     ],
   }),
+  actions: {
+    init() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.articles));
+          return;
+        }
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          this.articles = parsed;
+        }
+      } catch (e) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.articles));
+      }
+    },
+    upsertArticle(article) {
+      if (!article || !article.id) return;
+      const idx = this.articles.findIndex(a => a.id === article.id);
+      if (idx >= 0) {
+        this.articles[idx] = { ...this.articles[idx], ...article };
+      } else {
+        this.articles.unshift(article);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.articles));
+    }
+  },
   getters: {
     getArticleById: (state) => (id) => {
       return state.articles.find(article => article.id === id);

@@ -1,11 +1,14 @@
 <script setup>
 import { onMounted } from 'vue';
 import { useThemeStore } from './store/theme';
+import { useArticleStore } from './store/article';
 
 const themeStore = useThemeStore();
+const articleStore = useArticleStore();
 
 onMounted(() => {
   themeStore.init();
+  articleStore.init();
 });
 </script>
 

@@ -20,6 +20,18 @@ const routes = [
     meta: { title: '文章' }
   },
   {
+    path: '/article/new',
+    name: 'ArticleNew',
+    component: () => import('../views/ArticleEdit.vue'),
+    meta: { title: '新增文章' }
+  },
+  {
+    path: '/article/:id/edit',
+    name: 'ArticleEdit',
+    component: () => import('../views/ArticleEdit.vue'),
+    meta: { title: '编辑文章' }
+  },
+  {
     path: '/article/:id',
     name: 'ArticleDetail',
     component: () => import('../views/ArticleDetail.vue'),

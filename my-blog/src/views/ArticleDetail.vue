@@ -29,6 +29,12 @@
                 >
                   ← 返回文章列表
                 </router-link>
+                <router-link 
+                  :to="`/article/${article.id}/edit`" 
+                  class="text-primary dark:text-primary hover:underline"
+                >
+                  编辑文章 →
+                </router-link>
               </div>
             </div>
           </div>

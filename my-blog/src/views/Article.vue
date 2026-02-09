@@ -3,9 +3,17 @@
     <div class="bg-gray-50 dark:bg-gray-900 py-12">
       <div class="container mx-auto px-4">
         <div class="max-w-4xl mx-auto">
-          <h1 class="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-white">
-            所有文章
-          </h1>
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              所有文章
+            </h1>
+            <router-link
+              to="/article/new"
+              class="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-white hover:bg-blue-600"
+            >
+              新增文章
+            </router-link>
+          </div>
           
           <div class="mb-8">
             <input
