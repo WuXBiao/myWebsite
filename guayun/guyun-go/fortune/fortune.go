@@ -1,322 +1,128 @@
 package fortune
 
 import (
-	"encoding/json"
-	"fmt"
+	"strings"
 
 	"github.com/WuXBiao/guayun-go/bazi"
 	"github.com/WuXBiao/guayun-go/lucky"
 )
 
+// FortuneResult holds the complete fortune prediction
+type FortuneResult struct {
+	BaziInfo         *bazi.Bazi                 `json:"bazi_info"`
+	TenGods          *bazi.TenGods              `json:"ten_gods"`
+	DayMasterAnalysis *bazi.DayMasterAnalysis    `json:"day_master_analysis"`
+	Career           string                     `json:"career"`
+	Wealth           string                     `json:"wealth"`
+	Love             string                     `json:"love"`
+	Health           string                     `json:"health"`
+	LuckyInfo        *LuckyInfo                 `json:"lucky_info"`
+}
+
+// LuckyInfo holds lucky elements
+type LuckyInfo struct {
+	Colors    []string `json:"colors"`
+	Numbers   []int    `json:"numbers"`
+	Direction string   `json:"direction"`
+}
+
 // PredictFortune 推测运势
-func PredictFortune(baziInfo, gender string) string {
-	// 解析八字信息
-	var baziMap map[string]string
-	if err := json.Unmarshal([]byte(baziInfo), &baziMap); err != nil {
-		return `{"error":"Failed to parse bazi info"}`
-	}
+func PredictFortune(baziInfo *bazi.Bazi, gender string) *FortuneResult {
+	tenGods := baziInfo.GetTenGods()
+	dayMasterAnalysis := baziInfo.AnalyzeDayMasterStrength()
 
-	// 分析五行
-	fiveElements := bazi.AnalyzeFiveElements(baziMap)
-
-	// 推测短期运势
-	shortTerm := PredictShortTerm(baziMap, fiveElements, gender)
-
-	// 推测长期运势
-	longTerm := PredictLongTerm(baziMap, fiveElements, gender)
-
-	// 获取幸运数字和颜色
-	luckyNumbers := lucky.GetLuckyNumbers(baziMap)
-	luckyColors := lucky.GetLuckyColors(fiveElements)
-	luckyDirection := lucky.GetLuckyDirection(baziMap)
-
-	return fmt.Sprintf(`{
-		"shortTerm": %s,
-		"longTerm": %s,
-		"fiveElements": %s,
-		"luckyColor": %s,
-		"luckyNumber": %s,
-		"luckyDirection": "%s"
-	}`, shortTerm, longTerm, fiveElements, luckyColors, luckyNumbers, luckyDirection)
-}
-
-// PredictShortTerm 推测短期运势（近三个月）
-func PredictShortTerm(baziInfo map[string]string, fiveElements string, gender string) string {
-	// 解析五行信息
-	var elements map[string]string
-	json.Unmarshal([]byte(fiveElements), &elements)
-
-	// 根据五行和性别推测运势
-	overall := GetOverallFortune(elements, "short")
-	career := GetCareerFortune(elements, gender, "short")
-	love := GetLoveFortune(elements, gender, "short")
-	health := GetHealthFortune(elements, "short")
-	wealth := GetWealthFortune(elements, "short")
-	score := CalculateScore(elements, "short")
-
-	return fmt.Sprintf(`{
-		"period": "近三个月",
-		"overall": "%s",
-		"career": "%s",
-		"love": "%s",
-		"health": "%s",
-		"wealth": "%s",
-		"score": %d
-	}`, overall, career, love, health, wealth, score)
-}
-
-// PredictLongTerm 推测长期运势（全年）
-func PredictLongTerm(baziInfo map[string]string, fiveElements string, gender string) string {
-	// 解析五行信息
-	var elements map[string]string
-	json.Unmarshal([]byte(fiveElements), &elements)
-
-	overall := GetOverallFortune(elements, "long")
-	career := GetCareerFortune(elements, gender, "long")
-	love := GetLoveFortune(elements, gender, "long")
-	health := GetHealthFortune(elements, "long")
-	wealth := GetWealthFortune(elements, "long")
-	score := CalculateScore(elements, "long")
-
-	return fmt.Sprintf(`{
-		"period": "今年全年",
-		"overall": "%s",
-		"career": "%s",
-		"love": "%s",
-		"health": "%s",
-		"wealth": "%s",
-		"score": %d
-	}`, overall, career, love, health, wealth, score)
-}
-
-// GetOverallFortune 获取总体运势
-func GetOverallFortune(elements map[string]string, period string) string {
-	fortuneMap := map[string]map[string]string{
-		"short": {
-			"旺": "运势上升", "强": "运势良好", "中": "平稳上升",
-			"弱": "需要调整", "缺": "运势低迷",
-		},
-		"long": {
-			"旺": "运势很好", "强": "运势良好", "中": "平稳发展",
-			"弱": "需要努力", "缺": "需要改善",
+	return &FortuneResult{
+		BaziInfo:         baziInfo,
+		TenGods:          tenGods,
+		DayMasterAnalysis: dayMasterAnalysis,
+		Career:           analyzeCareer(tenGods, dayMasterAnalysis),
+		Wealth:           analyzeWealth(tenGods, dayMasterAnalysis),
+		Love:             analyzeLove(baziInfo, dayMasterAnalysis, gender),
+		Health:           analyzeHealth(dayMasterAnalysis),
+		LuckyInfo: &LuckyInfo{
+			Colors:    lucky.GetLuckyColors(bazi.AnalyzeFiveElements(baziInfo)), // Kept for simplicity
+			Numbers:   lucky.GetLuckyNumbers(baziInfo),
+			Direction: lucky.GetLuckyDirection(baziInfo),
 		},
 	}
+}
 
-	// 统计五行强弱
-	strongCount := 0
-	for _, strength := range elements {
-		if strength == "旺" || strength == "强" {
-			strongCount++
+func analyzeCareer(tenGods *bazi.TenGods, analysis *bazi.DayMasterAnalysis) string {
+	if analysis.Strength == "身强" {
+		if contains(tenGods.Month, "正官") || contains(tenGods.Month, "七杀") {
+			return "事业心强，有领导才能，适合在政府或大企业发展。"
+		}
+		return "精力充沛，适合创业或从事有挑战性的工作。"
+	} else {
+		if contains(tenGods.Month, "正印") || contains(tenGods.Month, "偏印") {
+			return "文笔佳，有贵人相助，适合从事文教、科研类工作。"
+		}
+		return "性格温和，适合团队合作，从事稳定类型的工作。"
+	}
+}
+
+func analyzeWealth(tenGods *bazi.TenGods, analysis *bazi.DayMasterAnalysis) string {
+	if analysis.Strength == "身强" {
+		if contains(tenGods.Month, "正财") || contains(tenGods.Month, "偏财") {
+			return "财运旺盛，善于理财，有机会获得丰厚回报。"
+		}
+		return "求财需努力，亲力亲为，方能有所收获。"
+	} else {
+		if contains(tenGods.Month, "比肩") || contains(tenGods.Month, "劫财") {
+			return "适合与人合作求财，但需注意防范财务风险。"
+		}
+		return "财运平稳，不宜进行高风险投资，适合稳健理财。"
+	}
+}
+
+func analyzeLove(baziInfo *bazi.Bazi, analysis *bazi.DayMasterAnalysis, gender string) string {
+	// 夫妻宫分析 (日支)
+	dayBranchElement := bazi.GetDayBranchElement(baziInfo)
+	isFavorable := false
+	for _, elem := range analysis.FavorableElements {
+		if elem == dayBranchElement {
+			isFavorable = true
+			break
 		}
 	}
 
-	strength := "中"
-	if strongCount >= 3 {
-		strength = "旺"
-	} else if strongCount == 2 {
-		strength = "强"
-	} else if strongCount <= 1 {
-		strength = "弱"
+	if isFavorable {
+		return "夫妻宫为喜用神，与伴侣关系和谐，能互相扶持，感情生活美满。"
+	} else {
+		return "夫妻宫为忌神，感情中易有波折，需要双方更多的沟通和理解来维持和谐。"
 	}
-
-	return fortuneMap[period][strength]
 }
 
-// GetCareerFortune 获取事业运势
-func GetCareerFortune(elements map[string]string, gender string, period string) string {
-	careerMap := map[string]map[string]map[string]string{
-		"short": {
-			"male": {
-				"旺": "事业蒸蒸日上，有晋升机会",
-				"强": "工作顺利，业绩突出",
-				"中": "工作稳定，有进展",
-				"弱": "工作压力大，需调整",
-			},
-			"female": {
-				"旺": "事业发展快速，机遇众多",
-				"强": "工作表现优异，受重视",
-				"中": "工作稳定，逐步进展",
-				"弱": "工作遇冷，需要突破",
-			},
-		},
-		"long": {
-			"male": {
-				"旺": "事业发展稳定，有重大突破",
-				"强": "事业运势良好，升职在即",
-				"中": "事业稳步发展，机会不少",
-				"弱": "事业需要调整，谨慎决策",
-			},
-			"female": {
-				"旺": "事业腾飞，机遇连连",
-				"强": "事业发展顺利，前景光明",
-				"中": "事业稳定增长，循序渐进",
-				"弱": "事业停滞，需要改变策略",
-			},
-		},
+func analyzeHealth(analysis *bazi.DayMasterAnalysis) string {
+	// 简单的五行平衡分析
+	if len(analysis.FavorableElements) >= 3 {
+		return "五行较为均衡，身体素质良好，注意日常作息即可。"
 	}
-
-	// 判断强弱
-	strength := "中"
-	if elements["火"] == "旺" || elements["木"] == "旺" {
-		strength = "旺"
-	} else if elements["火"] == "强" || elements["木"] == "强" {
-		strength = "强"
-	} else if elements["火"] == "弱" && elements["木"] == "弱" {
-		strength = "弱"
-	}
-
-	genderKey := "male"
-	if gender == "female" {
-		genderKey = "female"
-	}
-
-	return careerMap[period][genderKey][strength]
+	missingElements := getMissingElements(analysis)
+	return fmt.Sprintf("五行有所偏颇，需注意 %s 相关的健康问题，建议通过饮食、运动进行调理。", strings.Join(missingElements, "、"))
 }
 
-// GetLoveFortune 获取感情运势
-func GetLoveFortune(elements map[string]string, gender string, period string) string {
-	loveMap := map[string]map[string]map[string]string{
-		"short": {
-			"male": {
-				"旺": "感情运势旺盛，有新的邂逅",
-				"强": "感情稳定，有惊喜",
-				"中": "感情平稳，有小浪漫",
-				"弱": "感情需要经营，多沟通",
-			},
-			"female": {
-				"旺": "桃花运旺盛，魅力十足",
-				"强": "感情甜蜜，有进展",
-				"中": "感情稳定，温馨和谐",
-				"弱": "感情需要关注，主动出击",
-			},
-		},
-		"long": {
-			"male": {
-				"旺": "感情运势极佳，有结婚机会",
-				"强": "感情发展顺利，有重大进展",
-				"中": "感情稳定发展，逐步深化",
-				"弱": "感情需要耐心，不可急躁",
-			},
-			"female": {
-				"旺": "桃花运旺盛，有良缘",
-				"强": "感情发展顺利，有望成就",
-				"中": "感情稳定，有美好前景",
-				"弱": "感情需要主动，把握机会",
-			},
-		},
-	}
-
-	// 判断强弱
-	strength := "中"
-	if elements["火"] == "旺" || elements["水"] == "旺" {
-		strength = "旺"
-	} else if elements["火"] == "强" || elements["水"] == "强" {
-		strength = "强"
-	} else if elements["火"] == "弱" && elements["水"] == "弱" {
-		strength = "弱"
-	}
-
-	genderKey := "male"
-	if gender == "female" {
-		genderKey = "female"
-	}
-
-	return loveMap[period][genderKey][strength]
+func contains(s, substr string) bool {
+	return strings.Contains(s, substr)
 }
 
-// GetHealthFortune 获取健康运势
-func GetHealthFortune(elements map[string]string, period string) string {
-	healthMap := map[string]map[string]string{
-		"short": {
-			"旺": "身体状态很好，精力充沛",
-			"强": "身体健康，精神焕发",
-			"中": "身体健康，需注意休息",
-			"弱": "身体欠佳，需要调理",
-		},
-		"long": {
-			"旺": "全年身体状态优异，精力充足",
-			"强": "身体健康，抵抗力强",
-			"中": "身体健康，需防秋冬季疾病",
-			"弱": "身体需要调理，定期检查",
-		},
+func getMissingElements(analysis *bazi.DayMasterAnalysis) []string {
+	// A simplified way to suggest what might be 'missing' or weak
+	// For a real analysis, we'd look at the scores map.
+	allElements := []string{"木", "火", "土", "金", "水"}
+	present := make(map[string]bool)
+	for _, e := range analysis.FavorableElements {
+		present[e] = true
+	}
+	for _, e := range analysis.UnfavorableElements {
+		present[e] = true
 	}
 
-	// 判断强弱
-	strength := "中"
-	if elements["金"] == "旺" || elements["水"] == "旺" {
-		strength = "旺"
-	} else if elements["金"] == "强" || elements["水"] == "强" {
-		strength = "强"
-	} else if elements["金"] == "弱" && elements["水"] == "弱" {
-		strength = "弱"
-	}
-
-	return healthMap[period][strength]
-}
-
-// GetWealthFortune 获取财运
-func GetWealthFortune(elements map[string]string, period string) string {
-	wealthMap := map[string]map[string]string{
-		"short": {
-			"旺": "财运旺盛，有意外之财",
-			"强": "财运不错，适合投资",
-			"中": "财运平稳，稳步增长",
-			"弱": "财运平淡，需要谨慎",
-		},
-		"long": {
-			"旺": "财运极佳，收入增加",
-			"强": "财运稳定增长，有突破",
-			"中": "财运稳定，循序渐进",
-			"弱": "财运需要关注，谨慎理财",
-		},
-	}
-
-	// 判断强弱
-	strength := "中"
-	if elements["金"] == "旺" || elements["土"] == "旺" {
-		strength = "旺"
-	} else if elements["金"] == "强" || elements["土"] == "强" {
-		strength = "强"
-	} else if elements["金"] == "弱" && elements["土"] == "弱" {
-		strength = "弱"
-	}
-
-	return wealthMap[period][strength]
-}
-
-// CalculateScore 计算运势评分
-func CalculateScore(elements map[string]string, period string) int {
-	baseScore := 60
-	bonus := 0
-
-	// 根据五行强弱加分
-	for _, strength := range elements {
-		switch strength {
-		case "旺":
-			bonus += 8
-		case "强":
-			bonus += 5
-		case "中":
-			bonus += 2
-		case "弱":
-			bonus -= 3
-		case "缺":
-			bonus -= 5
+	missing := []string{}
+	for _, e := range allElements {
+		if !present[e] {
+			missing = append(missing, e)
 		}
 	}
-
-	score := baseScore + bonus
-	if score > 100 {
-		score = 100
-	}
-	if score < 0 {
-		score = 0
-	}
-
-	// 长期运势通常比短期低一点
-	if period == "long" && score > 5 {
-		score -= 3
-	}
-
-	return score
+	return missing
 }

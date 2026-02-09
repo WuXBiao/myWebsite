@@ -2,7 +2,7 @@
   <div class="space-y-8">
     <!-- 标题 -->
     <div class="text-center mb-12">
-      <h2 class="text-4xl font-bold text-white mb-4">输入你的八字信息</h2>
+      <h2 class="text-4xl font-bold text-white mb-4">输入你的阴历生日信息</h2>
       <p class="text-purple-200 text-lg">根据出生年月日时辰，预测你的运势</p>
     </div>
 

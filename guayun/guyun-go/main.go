@@ -76,7 +76,6 @@ func predictFortuneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 解析请求
 	var req struct {
 		Year   int    `json:"year"`
 		Month  int    `json:"month"`
@@ -86,36 +85,33 @@ func predictFortuneHandler(w http.ResponseWriter, r *http.Request) {
 		Gender string `json:"gender"`
 	}
 
-	// 解析 JSON 请求体
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, `{"error":"Failed to read request body"}`)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to read request body"})
 		return
 	}
 	defer r.Body.Close()
 
 	if err := json.Unmarshal(body, &req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, `{"error":"Invalid JSON format"}`)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid JSON format"})
 		return
 	}
 
-	// 计算八字
-	baziInfo := bazi.CalculateBazi(req.Year, req.Month, req.Day, req.Hour, req.Minute)
+	// Use UTC for calculation consistency, or ensure server's time.Local is correctly configured.
+	location, _ := time.LoadLocation("Asia/Shanghai")
+	birthTime := time.Date(req.Year, time.Month(req.Month), req.Day, req.Hour, req.Minute, 0, 0, location)
 
-	// 推测运势
+	baziInfo := bazi.NewBazi(birthTime)
 	fortuneResult := fortune.PredictFortune(baziInfo, req.Gender)
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{
-		"code": 0,
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"code":    0,
 		"message": "success",
-		"data": {
-			"bazi": %s,
-			"fortune": %s
-		}
-	}`, baziInfo, fortuneResult)
+		"data":    fortuneResult,
+	})
 }
 
 func getHistoryHandler(w http.ResponseWriter, r *http.Request) {
