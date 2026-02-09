@@ -89,6 +89,9 @@ jobs:
               --network app-network \
               -p 8080:8080 \
               -e ENV=production \
+              -e AI_API_KEY=${{ secrets.AI_API_KEY }} \
+              -e AI_BASE_URL=${{ secrets.AI_BASE_URL }} \
+              -e AI_MODEL=${{ secrets.AI_MODEL }} \
               -v $(pwd)/uploads:/app/uploads \
               $DOCKER_USERNAME/my-go-server:$IMAGE_TAG
             
