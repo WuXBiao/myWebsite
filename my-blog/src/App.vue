@@ -2,6 +2,7 @@
 import { onMounted } from 'vue';
 import { useThemeStore } from './store/theme';
 import { useArticleStore } from './store/article';
+import Live2dKanban from './components/common/Live2dKanban.vue';
 
 const themeStore = useThemeStore();
 const articleStore = useArticleStore();
@@ -18,6 +19,8 @@ onMounted(() => {
       <component :is="Component" />
     </transition>
   </router-view>
+
+  <Live2dKanban />
 </template>
 
 <style>

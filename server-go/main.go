@@ -1,13 +1,18 @@
 package main
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,6 +40,8 @@ func main() {
 	// 添加 CORS 中间件
 	router.Use(corsMiddleware())
 
+	router.POST("/api/ai/chat", aiChat)
+
 	// 上传文件接口
 	router.POST("/api/upload", uploadFile)
 
@@ -57,6 +64,165 @@ func main() {
 		fmt.Printf("Failed to start server: %v\n", err)
 	}
 
+}
+
+type aiChatRequest struct {
+	Message string `json:"message"`
+	Model   string `json:"model"`
+}
+
+type openAIChatCompletionRequest struct {
+	Model    string                 `json:"model"`
+	Messages []map[string]string    `json:"messages"`
+	Stream   bool                   `json:"stream,omitempty"`
+	Extra    map[string]interface{} `json:"-"`
+}
+
+func (r openAIChatCompletionRequest) MarshalJSON() ([]byte, error) {
+	type alias openAIChatCompletionRequest
+	b, err := json.Marshal(alias(r))
+	if err != nil {
+		return nil, err
+	}
+	if len(r.Extra) == 0 {
+		return b, nil
+	}
+
+	var m map[string]interface{}
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, err
+	}
+	for k, v := range r.Extra {
+		m[k] = v
+	}
+	return json.Marshal(m)
+}
+
+type openAIChatCompletionResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+	Error *struct {
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+func aiChat(c *gin.Context) {
+	var req aiChatRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if strings.TrimSpace(req.Message) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "message is required"})
+		return
+	}
+
+	apiKey := strings.TrimSpace(os.Getenv("AI_API_KEY"))
+	if apiKey == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI_API_KEY is not set"})
+		return
+	}
+
+	baseURL := strings.TrimSpace(os.Getenv("AI_BASE_URL"))
+	if baseURL == "" {
+		baseURL = "https://api.openai.com/v1"
+	}
+	baseURL = strings.TrimRight(baseURL, "/")
+
+	model := strings.TrimSpace(req.Model)
+	if model == "" {
+		model = strings.TrimSpace(os.Getenv("AI_MODEL"))
+	}
+	if model == "" {
+		model = "gpt-3.5-turbo"
+	}
+
+	timeoutSeconds := 60
+	if raw := strings.TrimSpace(os.Getenv("AI_TIMEOUT_SECONDS")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil && v > 0 {
+			timeoutSeconds = v
+		}
+	}
+
+	payload := openAIChatCompletionRequest{
+		Model: model,
+		Messages: []map[string]string{
+			{"role": "user", "content": req.Message},
+		},
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to encode request"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(timeoutSeconds)*time.Second)
+	defer cancel()
+
+	client := &http.Client{}
+	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/chat/completions", bytes.NewReader(body))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create upstream request"})
+		return
+	}
+	upstreamReq.Header.Set("Content-Type", "application/json")
+	upstreamReq.Header.Set("Authorization", "Bearer "+apiKey)
+
+	resp, err := client.Do(upstreamReq)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error":        "upstream request failed",
+			"detail":       err.Error(),
+			"timeout_sec":  timeoutSeconds,
+			"upstream_url": baseURL,
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "failed to read upstream response"})
+		return
+	}
+
+	var parsed openAIChatCompletionResponse
+	if err := json.Unmarshal(respBody, &parsed); err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "invalid upstream response"})
+		return
+	}
+	if parsed.Error != nil && strings.TrimSpace(parsed.Error.Message) != "" {
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error":           parsed.Error.Message,
+			"upstream_status": resp.StatusCode,
+			"upstream_body":   string(respBody),
+		})
+		return
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error":           "upstream returned non-2xx",
+			"upstream_status": resp.StatusCode,
+			"upstream_body":   string(respBody),
+		})
+		return
+	}
+	if len(parsed.Choices) == 0 {
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error":           "empty upstream response",
+			"upstream_status": resp.StatusCode,
+			"upstream_body":   string(respBody),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"reply": parsed.Choices[0].Message.Content,
+	})
 }
 
 // corsMiddleware 处理 CORS 跨域请求
