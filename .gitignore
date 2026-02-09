@@ -1,3 +1,23 @@
 # IDE
 .idea/
 .vscode/
+server-go/uploads/resume.pdf
+index-cloud/index-server/target/classes/application.properties
+index-cloud/index-server/target/classes/data.sql
+index-cloud/index-server/target/classes/schema.sql
+index-cloud/index-server/target/classes/com/index/IndexApplication.class
+index-cloud/index-server/target/classes/com/index/common/Result.class
+index-cloud/index-server/target/classes/com/index/controller/IndexController.class
+index-cloud/index-server/target/classes/com/index/entity/IndexConfig.class
+index-cloud/index-server/target/classes/com/index/entity/IndexData.class
+index-cloud/index-server/target/classes/com/index/mapper/IndexConfigMapper.class
+index-cloud/index-server/target/classes/com/index/mapper/IndexDataMapper.class
+index-cloud/index-server/target/classes/com/index/service/ExcelExportStyleImpl.class
+index-cloud/index-server/target/classes/com/index/service/ExportService.class
+index-cloud/index-server/target/classes/com/index/service/IndexService.class
+index-cloud/index-server/target/classes/com/index/service/MyBatisIndexService.class
+index-cloud/index-server/target/classes/com/index/service/impl/IndexServiceImpl.class
+index-cloud/index-server/target/classes/com/index/service/impl/MyBatisIndexServiceImpl.class
+index-cloud/index-server/target/classes/com/index/vo/IndexTreeVO.class
+index-cloud/index-server/target/classes/mapper/IndexConfigMapper.xml
+index-cloud/index-server/target/classes/mapper/IndexDataMapper.xml
