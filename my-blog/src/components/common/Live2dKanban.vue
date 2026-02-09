@@ -67,6 +67,14 @@
       </form>
     </div>
 
+    <div
+      v-if="enabled"
+      id="live2d-click-overlay"
+      class="fixed"
+      style="right: 0; bottom: 0; width: 200px; height: 350px; cursor: pointer; z-index: 40;"
+      @click="playMeow"
+    />
+
     <div class="fixed right-4 bottom-4 z-50 flex items-center gap-2">
       <button
         type="button"
@@ -163,6 +171,62 @@ const send = async () => {
   }
 };
 
+let audioContext = null;
+
+const getAudioContext = () => {
+  if (!audioContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      audioContext = new AudioContextClass();
+    }
+  }
+  return audioContext;
+};
+
+const playMeow = () => {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  
+  if (ctx.state === 'suspended') {
+    ctx.resume();
+  }
+  
+  try {
+    const now = ctx.currentTime;
+    
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, now);
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(500, now);
+    osc.frequency.exponentialRampToValueAtTime(350, now + 0.4);
+    osc.frequency.exponentialRampToValueAtTime(280, now + 1);
+    
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.15, now + 0.4);
+    gain.gain.exponentialRampToValueAtTime(0.05, now + 1);
+    
+    osc.start(now);
+    osc.stop(now + 1);
+  } catch (e) {
+    console.error('音频播放出错:', e);
+  }
+  
+  if (window.L2Dwidget && window.L2Dwidget.chatAPI && typeof window.L2Dwidget.chatAPI.addMessage === 'function') {
+    window.L2Dwidget.chatAPI.addMessage('喵～');
+  } else if (window.L2Dwidget && window.L2Dwidget.message) {
+    window.L2Dwidget.message.show('喵～');
+  }
+};
+
 const initWidget = () => {
   if (!enabled.value) return;
   if (!window.L2Dwidget || typeof window.L2Dwidget.init !== 'function') return;
@@ -187,6 +251,33 @@ const initWidget = () => {
       opacityOnHover: 0.2
     }
   });
+  
+  const bindClickEvent = (retries = 0) => {
+    if (retries > 20) {
+      console.error('❌ 无法找到 Live2D canvas 元素');
+      return;
+    }
+    
+    let canvas = document.getElementById('live2dcanvas');
+    
+    if (!canvas) {
+      const allCanvas = document.querySelectorAll('canvas');
+      if (allCanvas.length > 0) {
+        canvas = allCanvas[allCanvas.length - 1];
+      }
+    }
+    
+    if (canvas && canvas.offsetParent !== null) {
+      canvas.addEventListener('click', playMeow);
+      canvas.addEventListener('touchend', playMeow);
+      canvas.style.cursor = 'pointer';
+      console.log('✅ 点击事件已绑定到看板娘');
+    } else {
+      setTimeout(() => bindClickEvent(retries + 1), 200);
+    }
+  };
+  
+  bindClickEvent();
 };
 
 const showCanvas = () => {
