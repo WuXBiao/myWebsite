@@ -28,4 +28,30 @@ public interface RecordingRepository extends JpaRepository<Recording, Long> {
     Page<Recording> findByFilters(@Param("title") String title, 
                                   @Param("uploader") String uploader, 
                                   Pageable pageable);
+    
+    // 按机构查询录音列表
+    Page<Recording> findByOrgCode(String orgCode, Pageable pageable);
+    
+    // 按机构+筛选条件查询
+    @Query("SELECT r FROM Recording r WHERE " +
+           "r.orgCode = :orgCode AND " +
+           "(:title IS NULL OR r.title LIKE %:title%) AND " +
+           "(:uploader IS NULL OR r.uploader LIKE %:uploader%)")
+    Page<Recording> findByOrgCodeAndFilters(@Param("orgCode") String orgCode,
+                                            @Param("title") String title, 
+                                            @Param("uploader") String uploader, 
+                                            Pageable pageable);
+    
+    // 按上传者工号查询
+    Page<Recording> findByUploaderEmployeeId(String uploaderEmployeeId, Pageable pageable);
+    
+    // 按上传者工号+筛选条件查询
+    @Query("SELECT r FROM Recording r WHERE " +
+           "r.uploaderEmployeeId = :uploaderEmployeeId AND " +
+           "(:title IS NULL OR r.title LIKE %:title%) AND " +
+           "(:uploader IS NULL OR r.uploader LIKE %:uploader%)")
+    Page<Recording> findByUploaderEmployeeIdAndFilters(@Param("uploaderEmployeeId") String uploaderEmployeeId,
+                                                       @Param("title") String title, 
+                                                       @Param("uploader") String uploader, 
+                                                       Pageable pageable);
 }

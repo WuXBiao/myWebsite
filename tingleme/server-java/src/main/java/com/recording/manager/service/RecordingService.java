@@ -26,6 +26,42 @@ public interface RecordingService {
     Page<Recording> getRecordingsWithFilters(String title, String uploader, Pageable pageable);
     
     /**
+     * 根据机构分页获取录音列表
+     * @param orgCode 机构编码
+     * @param pageable 分页参数
+     * @return 分页录音数据
+     */
+    Page<Recording> getRecordingsByOrgCode(String orgCode, Pageable pageable);
+    
+    /**
+     * 根据机构和筛选条件分页获取录音列表
+     * @param orgCode 机构编码
+     * @param title 标题筛选条件（可为null）
+     * @param uploader 上传者筛选条件（可为null）
+     * @param pageable 分页参数
+     * @return 符合条件的分页录音数据
+     */
+    Page<Recording> getRecordingsByOrgCodeWithFilters(String orgCode, String title, String uploader, Pageable pageable);
+    
+    /**
+     * 根据上传者工号分页获取录音列表
+     * @param uploaderEmployeeId 上传者工号
+     * @param pageable 分页参数
+     * @return 分页录音数据
+     */
+    Page<Recording> getRecordingsByUploaderEmployeeId(String uploaderEmployeeId, Pageable pageable);
+    
+    /**
+     * 根据上传者工号和筛选条件分页获取录音列表
+     * @param uploaderEmployeeId 上传者工号
+     * @param title 标题筛选条件（可为null）
+     * @param uploader 上传者筛选条件（可为null）
+     * @param pageable 分页参数
+     * @return 符合条件的分页录音数据
+     */
+    Page<Recording> getRecordingsByUploaderEmployeeIdWithFilters(String uploaderEmployeeId, String title, String uploader, Pageable pageable);
+    
+    /**
      * 根据 ID 获取录音详情
      * @param id 录音ID
      * @return 录音对象（可能不存在）
@@ -40,15 +76,13 @@ public interface RecordingService {
     Recording saveRecording(Recording recording);
     
     /**
-     * 上传录音文件
+     * 上传录音文件（包含核实信息）
      * @param file 上传的音频文件
-     * @param title 录音标题
-     * @param description 录音描述（可为null）
-     * @param uploader 上传者（可为null）
+     * @param recording 录音对象（包含标题、描述、上传者及核实相关信息）
      * @return 保存后的录音对象
      * @throws IOException 文件保存失败时抛出异常
      */
-    Recording uploadRecording(MultipartFile file, String title, String description, String uploader) throws IOException;
+    Recording uploadRecording(MultipartFile file, Recording recording) throws IOException;
     
     /**
      * 删除录音（同时删除物理文件和数据库记录）

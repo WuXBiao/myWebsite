@@ -27,12 +27,24 @@ public class UserRole {
     @Column(name = "role_code", nullable = false)
     private String roleCode;
 
+    /**
+     * 所属机构编码
+     */
+    @Column(name = "org_code")
+    private String orgCode;
+
     public UserRole() {
     }
 
     public UserRole(String employeeId, String roleCode) {
         this.employeeId = employeeId;
         this.roleCode = roleCode;
+    }
+
+    public UserRole(String employeeId, String roleCode, String orgCode) {
+        this.employeeId = employeeId;
+        this.roleCode = roleCode;
+        this.orgCode = orgCode;
     }
 
     public Long getId() {
@@ -57,5 +69,13 @@ public class UserRole {
 
     public void setRoleCode(String roleCode) {
         this.roleCode = roleCode;
+    }
+
+    public String getOrgCode() {
+        return orgCode;
+    }
+
+    public void setOrgCode(String orgCode) {
+        this.orgCode = orgCode;
     }
 }

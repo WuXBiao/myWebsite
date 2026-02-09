@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.index.mapper.IndexConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.index.entity.IndexConfig">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="level" property="level" jdbcType="INTEGER"/>
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+        <result column="category" property="category" jdbcType="VARCHAR"/>
+        <result column="sub_category" property="subCategory" jdbcType="VARCHAR"/>
+        <result column="index_code" property="indexCode" jdbcType="VARCHAR"/>
+        <result column="index_name" property="indexName" jdbcType="VARCHAR"/>
+        <result column="row_type" property="rowType" jdbcType="VARCHAR"/>
+        <result column="section_title" property="sectionTitle" jdbcType="VARCHAR"/>
+        <result column="section_note" property="sectionNote" jdbcType="VARCHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, parent_id, level, sort_order, category, sub_category, index_code, index_name, 
+        row_type, section_title, section_note, remark, created_at, updated_at
+    </sql>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_index_config
+        ORDER BY COALESCE(sort_order, 0), id
+    </select>
+
+    <select id="findById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_index_config
+        WHERE id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <select id="findByParentId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_index_config
+        WHERE parent_id = #{parentId,jdbcType=BIGINT}
+        ORDER BY COALESCE(sort_order, 0), id
+    </select>
+
+    <select id="findByCategory" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_index_config
+        WHERE category = #{category,jdbcType=VARCHAR}
+        ORDER BY COALESCE(sort_order, 0), id
+    </select>
+
+    <select id="findAllCategories" resultType="java.lang.String">
+        SELECT DISTINCT category
+        FROM t_index_config
+        WHERE category IS NOT NULL
+        ORDER BY category
+    </select>
+
+    <select id="findByIndexCode" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_index_config
+        WHERE index_code = #{indexCode,jdbcType=VARCHAR}
+    </select>
+
+    <insert id="save" parameterType="com.index.entity.IndexConfig">
+        INSERT INTO t_index_config (
+            parent_id, level, sort_order, category, sub_category, 
+            index_code, index_name, row_type, section_title, section_note, 
+            remark, created_at, updated_at
+        ) VALUES (
+            #{parentId,jdbcType=BIGINT}, #{level,jdbcType=INTEGER}, #{sortOrder,jdbcType=INTEGER}, 
+            #{category,jdbcType=VARCHAR}, #{subCategory,jdbcType=VARCHAR}, 
+            #{indexCode,jdbcType=VARCHAR}, #{indexName,jdbcType=VARCHAR}, 
+            #{rowType,jdbcType=VARCHAR}, #{sectionTitle,jdbcType=VARCHAR}, 
+            #{sectionNote,jdbcType=VARCHAR}, #{remark,jdbcType=VARCHAR}, 
+            NOW(), NOW()
+        )
+        <selectKey keyProperty="id" resultType="long">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="saveBatch" parameterType="java.util.List">
+        INSERT INTO t_index_config (
+            parent_id, level, sort_order, category, sub_category, 
+            index_code, index_name, row_type, section_title, section_note, 
+            remark, created_at, updated_at
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.parentId,jdbcType=BIGINT}, #{item.level,jdbcType=INTEGER}, 
+                #{item.sortOrder,jdbcType=INTEGER}, #{item.category,jdbcType=VARCHAR}, 
+                #{item.subCategory,jdbcType=VARCHAR}, #{item.indexCode,jdbcType=VARCHAR}, 
+                #{item.indexName,jdbcType=VARCHAR}, #{item.rowType,jdbcType=VARCHAR}, 
+                #{item.sectionTitle,jdbcType=VARCHAR}, #{item.sectionNote,jdbcType=VARCHAR}, 
+                #{item.remark,jdbcType=VARCHAR}, NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM t_index_config
+        WHERE id = #{id,jdbcType=BIGINT}
+    </delete>
+
+</mapper>

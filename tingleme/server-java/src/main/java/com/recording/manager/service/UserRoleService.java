@@ -75,4 +75,24 @@ public class UserRoleService {
     public List<UserRole> getUserRoles(String employeeId) {
         return userRoleRepository.findByEmployeeId(employeeId);
     }
+    
+    /**
+     * 根据工号获取用户的机构编码
+     * 
+     * @param employeeId 工号
+     * @return 机构编码，如果没有配置则返回 null
+     */
+    public String getOrgCode(String employeeId) {
+        if (employeeId == null || employeeId.isEmpty()) {
+            return null;
+        }
+        
+        List<UserRole> userRoles = userRoleRepository.findByEmployeeId(employeeId);
+        if (userRoles.isEmpty()) {
+            return null;
+        }
+        
+        // 返回第一个角色的机构编码
+        return userRoles.get(0).getOrgCode();
+    }
 }

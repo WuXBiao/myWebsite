@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.index.mapper.IndexDataMapper">
+
+    <resultMap id="BaseResultMap" type="com.index.entity.IndexData">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="config_id" property="configId" jdbcType="BIGINT"/>
+        <result column="period" property="period" jdbcType="VARCHAR"/>
+        <result column="balance" property="balance" jdbcType="DECIMAL"/>
+        <result column="mom_increment" property="momIncrement" jdbcType="DECIMAL"/>
+        <result column="ytd_increment" property="ytdIncrement" jdbcType="DECIMAL"/>
+        <result column="ytd_growth_rate" property="ytdGrowthRate" jdbcType="DECIMAL"/>
+        <result column="deposit_ratio" property="depositRatio" jdbcType="DECIMAL"/>
+        <result column="ratio_vs_ytd" property="ratioVsYtd" jdbcType="DECIMAL"/>
+        <result column="yearly_avg" property="yearlyAvg" jdbcType="DECIMAL"/>
+        <result column="interest_income" property="interestIncome" jdbcType="DECIMAL"/>
+        <result column="interest_expense" property="interestExpense" jdbcType="DECIMAL"/>
+        <result column="interest_rate" property="interestRate" jdbcType="DECIMAL"/>
+        <result column="rate_vs_mom" property="rateVsMom" jdbcType="DECIMAL"/>
+        <result column="rate_vs_yoy" property="rateVsYoy" jdbcType="DECIMAL"/>
+        <result column="data_created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="data_updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap id="IndexDataWithConfigResultMap" type="com.index.entity.IndexData">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="config_id" property="configId" jdbcType="BIGINT"/>
+        <result column="period" property="period" jdbcType="VARCHAR"/>
+        <result column="balance" property="balance" jdbcType="DECIMAL"/>
+        <result column="mom_increment" property="momIncrement" jdbcType="DECIMAL"/>
+        <result column="ytd_increment" property="ytdIncrement" jdbcType="DECIMAL"/>
+        <result column="ytd_growth_rate" property="ytdGrowthRate" jdbcType="DECIMAL"/>
+        <result column="deposit_ratio" property="depositRatio" jdbcType="DECIMAL"/>
+        <result column="ratio_vs_ytd" property="ratioVsYtd" jdbcType="DECIMAL"/>
+        <result column="yearly_avg" property="yearlyAvg" jdbcType="DECIMAL"/>
+        <result column="interest_income" property="interestIncome" jdbcType="DECIMAL"/>
+        <result column="interest_expense" property="interestExpense" jdbcType="DECIMAL"/>
+        <result column="interest_rate" property="interestRate" jdbcType="DECIMAL"/>
+        <result column="rate_vs_mom" property="rateVsMom" jdbcType="DECIMAL"/>
+        <result column="rate_vs_yoy" property="rateVsYoy" jdbcType="DECIMAL"/>
+        <result column="data_created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="data_updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+        <association property="config" javaType="com.index.entity.IndexConfig">
+            <id column="config_id" property="id" jdbcType="BIGINT"/>
+            <result column="config_parent_id" property="parentId" jdbcType="BIGINT"/>
+            <result column="config_level" property="level" jdbcType="INTEGER"/>
+            <result column="config_sort_order" property="sortOrder" jdbcType="INTEGER"/>
+            <result column="config_category" property="category" jdbcType="VARCHAR"/>
+            <result column="config_sub_category" property="subCategory" jdbcType="VARCHAR"/>
+            <result column="config_index_code" property="indexCode" jdbcType="VARCHAR"/>
+            <result column="config_index_name" property="indexName" jdbcType="VARCHAR"/>
+            <result column="config_row_type" property="rowType" jdbcType="VARCHAR"/>
+            <result column="config_section_title" property="sectionTitle" jdbcType="VARCHAR"/>
+            <result column="config_section_note" property="sectionNote" jdbcType="VARCHAR"/>
+            <result column="config_remark" property="remark" jdbcType="VARCHAR"/>
+            <result column="config_created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+            <result column="config_updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+        </association>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        d.id, d.config_id, d.period, d.balance, d.mom_increment, d.ytd_increment, d.ytd_growth_rate, 
+        d.deposit_ratio, d.ratio_vs_ytd, d.yearly_avg, d.interest_income, d.interest_expense, 
+        d.interest_rate, d.rate_vs_mom, d.rate_vs_yoy, d.created_at as data_created_at, d.updated_at as data_updated_at
+    </sql>
+
+    <sql id="Config_Column_List">
+        c.id as config_id, c.parent_id as config_parent_id, c.level as config_level, 
+        c.sort_order as config_sort_order, c.category as config_category, 
+        c.sub_category as config_sub_category, c.index_code as config_index_code, 
+        c.index_name as config_index_name, c.row_type as config_row_type, 
+        c.section_title as config_section_title, c.section_note as config_section_note, 
+        c.remark as config_remark, c.created_at as config_created_at, 
+        c.updated_at as config_updated_at
+    </sql>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_index_data
+        ORDER BY id
+    </select>
+
+    <select id="findById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_index_data
+        WHERE id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <select id="findByPeriod" parameterType="java.lang.String" resultMap="IndexDataWithConfigResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        <include refid="Config_Column_List"/>
+        FROM t_index_data d
+        LEFT JOIN t_index_config c ON d.config_id = c.id
+        WHERE d.period = #{period,jdbcType=VARCHAR}
+        ORDER BY COALESCE(c.sort_order, 0), c.id
+    </select>
+
+    <select id="findByConfigIdAndPeriod" parameterType="java.lang.Long" resultMap="IndexDataWithConfigResultMap">
+        SELECT
+        d.<include refid="Base_Column_List"/>,
+        c.<include refid="Config_Column_List"/>
+        FROM t_index_data d
+        LEFT JOIN t_index_config c ON d.config_id = c.id
+        WHERE d.config_id = #{configId,jdbcType=BIGINT} AND d.period = #{period,jdbcType=VARCHAR}
+    </select>
+
+    <select id="findByConfigIdInAndPeriod" parameterType="java.util.List" resultMap="IndexDataWithConfigResultMap">
+        SELECT
+        d.<include refid="Base_Column_List"/>,
+        c.<include refid="Config_Column_List"/>
+        FROM t_index_data d
+        LEFT JOIN t_index_config c ON d.config_id = c.id
+        WHERE d.config_id IN
+        <foreach collection="configIds" item="configId" open="(" separator="," close=")">
+            #{configId}
+        </foreach>
+        AND d.period = #{period,jdbcType=VARCHAR}
+        ORDER BY COALESCE(c.sort_order, 0), c.id
+    </select>
+
+    <select id="findAllPeriods" resultType="java.lang.String">
+        SELECT DISTINCT period
+        FROM t_index_data
+        ORDER BY period DESC
+    </select>
+
+    <insert id="save" parameterType="com.index.entity.IndexData">
+        INSERT INTO t_index_data (
+            config_id, period, balance, mom_increment, ytd_increment, ytd_growth_rate, 
+            deposit_ratio, ratio_vs_ytd, yearly_avg, interest_income, interest_expense, 
+            interest_rate, rate_vs_mom, rate_vs_yoy, created_at, updated_at
+        ) VALUES (
+            #{configId,jdbcType=BIGINT}, #{period,jdbcType=VARCHAR}, 
+            #{balance,jdbcType=DECIMAL}, #{momIncrement,jdbcType=DECIMAL}, 
+            #{ytdIncrement,jdbcType=DECIMAL}, #{ytdGrowthRate,jdbcType=DECIMAL}, 
+            #{depositRatio,jdbcType=DECIMAL}, #{ratioVsYtd,jdbcType=DECIMAL}, 
+            #{yearlyAvg,jdbcType=DECIMAL}, #{interestIncome,jdbcType=DECIMAL}, 
+            #{interestExpense,jdbcType=DECIMAL}, #{interestRate,jdbcType=DECIMAL}, 
+            #{rateVsMom,jdbcType=DECIMAL}, #{rateVsYoy,jdbcType=DECIMAL}, 
+            NOW(), NOW()
+        )
+        <selectKey keyProperty="id" resultType="long">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="saveBatch" parameterType="java.util.List">
+        INSERT INTO t_index_data (
+            config_id, period, balance, mom_increment, ytd_increment, ytd_growth_rate, 
+            deposit_ratio, ratio_vs_ytd, yearly_avg, interest_income, interest_expense, 
+            interest_rate, rate_vs_mom, rate_vs_yoy, created_at, updated_at
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.configId,jdbcType=BIGINT}, #{item.period,jdbcType=VARCHAR}, 
+                #{item.balance,jdbcType=DECIMAL}, #{item.momIncrement,jdbcType=DECIMAL}, 
+                #{item.ytdIncrement,jdbcType=DECIMAL}, #{item.ytdGrowthRate,jdbcType=DECIMAL}, 
+                #{item.depositRatio,jdbcType=DECIMAL}, #{item.ratioVsYtd,jdbcType=DECIMAL}, 
+                #{item.yearlyAvg,jdbcType=DECIMAL}, #{item.interestIncome,jdbcType=DECIMAL}, 
+                #{item.interestExpense,jdbcType=DECIMAL}, #{item.interestRate,jdbcType=DECIMAL}, 
+                #{item.rateVsMom,jdbcType=DECIMAL}, #{item.rateVsYoy,jdbcType=DECIMAL}, 
+                NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteByPeriod" parameterType="java.lang.String">
+        DELETE FROM t_index_data
+        WHERE period = #{period,jdbcType=VARCHAR}
+    </delete>
+
+</mapper>
