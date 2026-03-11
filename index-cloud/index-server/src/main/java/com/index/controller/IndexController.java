@@ -188,7 +188,7 @@ public class IndexController {
             
             // 按分类过滤
             if (category != null && !category.isEmpty()) {
-                data.removeIf(d -> d.getConfig() == null || !category.equals(d.getConfig().getCategory()));
+                data.removeIf(d -> d.getConfig() == null || !category.equals(d.getConfig().getMergeItem()));
             }
 
             byte[] excelData = exportService.exportToExcel(data, period);

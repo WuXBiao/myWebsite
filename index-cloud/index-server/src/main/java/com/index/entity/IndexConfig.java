@@ -35,16 +35,16 @@ public class IndexConfig {
     private Integer sortOrder;
 
     /**
-     * 分类
+     * 合并项
      */
-    @Column(name = "category", length = 100)
-    private String category;
+    @Column(name = "merge_item", length = 100)
+    private String mergeItem;
 
     /**
-     * 子分类
+     * 横幅
      */
-    @Column(name = "sub_category", length = 100)
-    private String subCategory;
+    @Column(name = "banner", length = 200)
+    private String banner;
 
     /**
      * 指标编号

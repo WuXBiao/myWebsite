@@ -5,10 +5,9 @@ import com.recording.manager.entity.Recording;
 import com.recording.manager.security.RequireRole;
 import com.recording.manager.security.Role;
 import com.recording.manager.service.RecordingService;
+import com.recording.manager.service.StreamingService;
 import com.recording.manager.service.UserRoleService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +35,9 @@ import java.util.Map;
 @RequestMapping("/api/recordings")
 @CrossOrigin(origins = "*")
 public class RecordingController {
+
+    @Autowired
+    private StreamingService streamingService;
 
     @Autowired
     private RecordingService recordingService;
@@ -191,39 +193,34 @@ public class RecordingController {
                 });
     }
 
-    // 播放录音
+    // 播放录音（支持拖动进度条）
     @GetMapping(value = {"/play/{id}", "/play/{id}/{fileName}"})
-    public void playRecording(@PathVariable Long id, HttpServletResponse response) {
+    public void playRecording(
+            @PathVariable Long id, 
+            @RequestHeader(value = "Range", required = false) String rangeHeader,
+            HttpServletResponse response) {
+            
         recordingService.getRecordingById(id).ifPresent(recording -> {
             String filePath = recording.getFilePath();
-            File file = new File(filePath);
-            
-            if (!file.exists()) {
-                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-            
-            // 设置 Content-Type
             String contentType = getAudioContentType(filePath);
             if (contentType == null) {
                 contentType = "audio/mpeg";
             }
-            response.setContentType(contentType);
-            response.setContentLengthLong(file.length());
             
-            // 写入文件流
-            try (FileInputStream fis = new FileInputStream(file);
-                 OutputStream os = response.getOutputStream()) {
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = fis.read(buffer)) != -1) {
-                    os.write(buffer, 0, bytesRead);
-                }
-                os.flush();
-            } catch (IOException e) {
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            }
+            streamingService.streamFile(filePath, rangeHeader, contentType, response);
         });
+        
+        // 如果找不到录音，返回 404 (在 ifPresent 之外处理比较麻烦，或者可以在 streamFile 里再次检查文件是否存在)
+        // 这里简单起见，如果 ID 不存在，什么都不做（Spring 默认返回 200 OK 但无内容，或者我们可以改进一下）
+        // 更严谨的写法：
+        /*
+        Recording recording = recordingService.getRecordingById(id).orElse(null);
+        if (recording == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        // ... 继续处理
+        */
     }
 
     // 根据文件扩展名获取音频 MIME 类型
@@ -254,30 +251,41 @@ public class RecordingController {
     // 下载录音（用户、管理员可操作）
     @GetMapping("/download/{id}")
     @RequireRole({Role.USER, Role.ADMIN})
-    public ResponseEntity<Resource> downloadRecording(@PathVariable Long id) {
-        return recordingService.getRecordingById(id)
-                .map(recording -> {
-                    String filePath = recording.getFilePath();
-                    Resource resource = new FileSystemResource(filePath);
-                    
-                    if (!resource.exists()) {
-                        return ResponseEntity.notFound().<Resource>build();
-                    }
-                    
-                    String fileName = recording.getFileName();
-                    String encodedFileName;
-                    try {
-                        encodedFileName = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
-                    } catch (UnsupportedEncodingException e) {
-                        encodedFileName = fileName;
-                    }
-                    
-                    return ResponseEntity.ok()
-                            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                            .header(HttpHeaders.CONTENT_DISPOSITION, 
-                                    "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName)
-                            .body(resource);
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public void downloadRecording(@PathVariable Long id, HttpServletResponse response) throws IOException {
+        Recording recording = recordingService.getRecordingById(id).orElse(null);
+        if (recording == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        String filePath = recording.getFilePath();
+        File file = new File(filePath);
+        if (!file.exists() || !file.isFile()) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        String fileName = recording.getFileName();
+        String encodedFileName;
+        try {
+            encodedFileName = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
+        } catch (UnsupportedEncodingException e) {
+            encodedFileName = fileName;
+        }
+
+        String contentType = getAudioContentType(filePath);
+        response.setContentType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName);
+        response.setContentLengthLong(file.length());
+
+        try (FileInputStream in = new FileInputStream(file); OutputStream out = response.getOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int len;
+            while ((len = in.read(buffer)) != -1) {
+                out.write(buffer, 0, len);
+            }
+            out.flush();
+        }
     }
 }

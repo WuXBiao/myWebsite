@@ -54,8 +54,9 @@
           ></audio>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="100">
+      <el-table-column label="操作" width="160">
         <template #default="{ row }">
+          <el-button size="small" type="primary" @click="downloadRecording(row)">下载</el-button>
           <el-button size="small" type="danger" @click="deleteRecording(row.id)">删除</el-button>
         </template>
       </el-table-column>
@@ -147,6 +148,13 @@ export default {
       } catch (error) {
         console.error('删除录音失败:', error);
         this.$message.error('删除失败');
+      }
+    },
+    async downloadRecording(recording) {
+      try {
+        await recordingApi.downloadRecording(recording.id, recording.fileName);
+      } catch (error) {
+        this.$message.error('下载失败');
       }
     },
     formatFileSize(size) {

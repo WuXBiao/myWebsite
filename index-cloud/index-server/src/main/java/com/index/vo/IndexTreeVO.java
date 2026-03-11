@@ -15,8 +15,8 @@ public class IndexTreeVO {
     private Long parentId;
     private Integer level;
     private Integer sortOrder;
-    private String category;
-    private String subCategory;
+    private String mergeItem;
+    private String banner;
     private String indexCode;
     private String indexName;
     private String rowType;

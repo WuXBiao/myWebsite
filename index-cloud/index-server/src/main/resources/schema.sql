@@ -15,8 +15,8 @@ CREATE TABLE t_index_config (
     parent_id BIGINT,
     level INT,
     sort_order INT,
-    category VARCHAR(100),
-    sub_category VARCHAR(100),
+    merge_item VARCHAR(100),
+    banner VARCHAR(200),
     index_code VARCHAR(50),
     index_name VARCHAR(200),
     row_type VARCHAR(20) DEFAULT 'DATA',
@@ -28,7 +28,7 @@ CREATE TABLE t_index_config (
 );
 
 CREATE INDEX idx_config_parent_id ON t_index_config(parent_id);
-CREATE INDEX idx_config_category ON t_index_config(category);
+CREATE INDEX idx_config_merge_item ON t_index_config(merge_item);
 CREATE INDEX idx_config_sort_order ON t_index_config(sort_order);
 CREATE INDEX idx_config_index_code ON t_index_config(index_code);
 

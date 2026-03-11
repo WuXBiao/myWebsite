@@ -50,6 +50,25 @@
             <artifactId>jaudiotagger</artifactId>
             <version>2.0.1</version>
         </dependency>
+        
+        <!-- Apache Tika 音频元数据解析 (版本 1.14 确保兼容性) -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>1.14</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers</artifactId>
+            <version>1.14</version>
+        </dependency>
+
+        <!-- MP3SPI: 使 javax.sound.sampled 支持 MP3 -->
+        <dependency>
+            <groupId>com.googlecode.soundlibs</groupId>
+            <artifactId>mp3spi</artifactId>
+            <version>1.9.5.4</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

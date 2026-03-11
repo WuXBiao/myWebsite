@@ -25,14 +25,14 @@ public interface IndexConfigMapper {
     List<IndexConfig> findByParentId(@Param("parentId") Long parentId);
 
     /**
-     * 根据分类查询指标配置
+     * 根据合并项查询指标配置
      */
-    List<IndexConfig> findByCategory(@Param("category") String category);
+    List<IndexConfig> findByMergeItem(@Param("mergeItem") String mergeItem);
 
     /**
-     * 查询所有分类
+     * 查询所有合并项
      */
-    List<String> findAllCategories();
+    List<String> findAllMergeItems();
 
     /**
      * 根据指标编码查询

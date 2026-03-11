@@ -66,7 +66,7 @@ public class MyBatisIndexServiceImpl implements MyBatisIndexService {
 
     @Override
     public List<String> getAllCategories() {
-        return configMapper.findAllCategories();
+        return configMapper.findAllMergeItems();
     }
 
     // ==================== 数据相关 ====================
@@ -135,7 +135,7 @@ public class MyBatisIndexServiceImpl implements MyBatisIndexService {
 
     @Override
     public List<IndexTreeVO> getIndexTreeByCategory(String period, String category) {
-        List<IndexConfig> configs = configMapper.findByCategory(category);
+        List<IndexConfig> configs = configMapper.findByMergeItem(category);
         List<Long> configIds = configs.stream().map(IndexConfig::getId).collect(Collectors.toList());
         List<IndexData> dataList = dataMapper.findByConfigIdInAndPeriod(configIds, period);
         
@@ -175,8 +175,8 @@ public class MyBatisIndexServiceImpl implements MyBatisIndexService {
         vo.setId(config.getId());
         vo.setParentId(config.getParentId());
         vo.setLevel(config.getLevel());
-        vo.setCategory(config.getCategory());
-        vo.setSubCategory(config.getSubCategory());
+        vo.setMergeItem(config.getMergeItem());
+        vo.setBanner(config.getBanner());
         vo.setIndexCode(config.getIndexCode());
         vo.setIndexName(config.getIndexName());
         vo.setRowType(config.getRowType());

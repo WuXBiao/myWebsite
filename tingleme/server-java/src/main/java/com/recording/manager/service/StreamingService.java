@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,7 +31,98 @@ public class StreamingService {
     private static final long CHUNK_SIZE = 1024 * 1024;
 
     /**
-     * 构建支持 Range 请求的响应
+     * 将文件流式传输到 HttpServletResponse（支持 Range）
+     * 
+     * @param filePath 文件路径
+     * @param rangeHeader Range 请求头
+     * @param contentType 内容类型
+     * @param response HttpServletResponse
+     */
+    public void streamFile(String filePath, String rangeHeader, String contentType, javax.servlet.http.HttpServletResponse response) {
+        try {
+            Path path = Paths.get(filePath);
+            Resource resource = new UrlResource(path.toUri());
+            
+            if (!resource.exists()) {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            
+            long fileLength = resource.contentLength();
+            
+            // 解析 Range 请求头
+            RangeInfo rangeInfo = parseRangeHeader(rangeHeader, fileLength);
+            
+            if (rangeInfo == null) {
+                // 无 Range 请求，返回完整文件
+                streamFullFile(filePath, fileLength, contentType, response);
+            } else {
+                // 有 Range 请求，返回部分内容
+                streamPartialFile(filePath, rangeInfo, fileLength, contentType, response);
+            }
+            
+        } catch (IOException e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * 传输完整文件到 Response
+     */
+    private void streamFullFile(String filePath, long fileLength, String contentType, javax.servlet.http.HttpServletResponse response) 
+            throws IOException {
+        response.setContentType(contentType);
+        response.setContentLengthLong(fileLength);
+        response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
+        response.setStatus(HttpServletResponse.SC_OK);
+        
+        try (InputStream is = new java.io.FileInputStream(filePath);
+             OutputStream os = response.getOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+            os.flush();
+        }
+    }
+
+    /**
+     * 传输部分文件到 Response (206 Partial Content)
+     */
+    private void streamPartialFile(String filePath, RangeInfo rangeInfo, long fileLength, String contentType, javax.servlet.http.HttpServletResponse response) 
+            throws IOException {
+        long start = rangeInfo.start;
+        long end = rangeInfo.end;
+        long contentLength = end - start + 1;
+        
+        response.setContentType(contentType);
+        response.setContentLengthLong(contentLength);
+        response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
+        response.setHeader(HttpHeaders.CONTENT_RANGE, String.format("bytes %d-%d/%d", start, end, fileLength));
+        response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+        
+        try (RandomAccessFile file = new RandomAccessFile(filePath, "r");
+             OutputStream os = response.getOutputStream()) {
+            file.seek(start);
+            
+            byte[] buffer = new byte[8192];
+            long bytesToRead = contentLength;
+            
+            while (bytesToRead > 0) {
+                int len = (int) Math.min(buffer.length, bytesToRead);
+                int read = file.read(buffer, 0, len);
+                if (read == -1) break;
+                
+                os.write(buffer, 0, read);
+                bytesToRead -= read;
+            }
+            os.flush();
+        }
+    }
+
+    /**
+     * 构建支持 Range 请求的响应 (ResponseEntity 版本 - 保留以兼容)
      * 
      * @param filePath 文件路径
      * @param rangeHeader Range 请求头
@@ -142,7 +234,7 @@ public class StreamingService {
                 // bytes=start-
                 start = Long.parseLong(parts[0]);
                 end = Math.min(start + CHUNK_SIZE - 1, fileLength - 1);
-            } else if (parts.length == 2 && parts[0].isEmpty()) {
+            } else if (parts.length == 2) {
                 // bytes=-suffix
                 long suffix = Long.parseLong(parts[1]);
                 start = Math.max(fileLength - suffix, 0);

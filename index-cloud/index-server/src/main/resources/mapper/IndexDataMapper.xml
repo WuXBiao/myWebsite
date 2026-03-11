@@ -46,8 +46,8 @@
             <result column="config_parent_id" property="parentId" jdbcType="BIGINT"/>
             <result column="config_level" property="level" jdbcType="INTEGER"/>
             <result column="config_sort_order" property="sortOrder" jdbcType="INTEGER"/>
-            <result column="config_category" property="category" jdbcType="VARCHAR"/>
-            <result column="config_sub_category" property="subCategory" jdbcType="VARCHAR"/>
+            <result column="config_category" property="mergeItem" jdbcType="VARCHAR"/>
+            <result column="config_sub_category" property="banner" jdbcType="VARCHAR"/>
             <result column="config_index_code" property="indexCode" jdbcType="VARCHAR"/>
             <result column="config_index_name" property="indexName" jdbcType="VARCHAR"/>
             <result column="config_row_type" property="rowType" jdbcType="VARCHAR"/>
@@ -67,8 +67,8 @@
 
     <sql id="Config_Column_List">
         c.id as config_id, c.parent_id as config_parent_id, c.level as config_level, 
-        c.sort_order as config_sort_order, c.category as config_category, 
-        c.sub_category as config_sub_category, c.index_code as config_index_code, 
+        c.sort_order as config_sort_order, c.merge_item as config_category, 
+        c.banner as config_sub_category, c.index_code as config_index_code, 
         c.index_name as config_index_name, c.row_type as config_row_type, 
         c.section_title as config_section_title, c.section_note as config_section_note, 
         c.remark as config_remark, c.created_at as config_created_at, 
@@ -101,8 +101,8 @@
 
     <select id="findByConfigIdAndPeriod" parameterType="java.lang.Long" resultMap="IndexDataWithConfigResultMap">
         SELECT
-        d.<include refid="Base_Column_List"/>,
-        c.<include refid="Config_Column_List"/>
+        <include refid="Base_Column_List"/>,
+        <include refid="Config_Column_List"/>
         FROM t_index_data d
         LEFT JOIN t_index_config c ON d.config_id = c.id
         WHERE d.config_id = #{configId,jdbcType=BIGINT} AND d.period = #{period,jdbcType=VARCHAR}
@@ -110,8 +110,8 @@
 
     <select id="findByConfigIdInAndPeriod" parameterType="java.util.List" resultMap="IndexDataWithConfigResultMap">
         SELECT
-        d.<include refid="Base_Column_List"/>,
-        c.<include refid="Config_Column_List"/>
+        <include refid="Base_Column_List"/>,
+        <include refid="Config_Column_List"/>
         FROM t_index_data d
         LEFT JOIN t_index_config c ON d.config_id = c.id
         WHERE d.config_id IN

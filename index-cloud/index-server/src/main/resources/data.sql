@@ -11,11 +11,11 @@ DELETE FROM t_index_config;
 -- ================================================
 
 -- 横向分类标题：贷款结构：分条线
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (1, NULL, 0, 1, NULL, NULL, 'SEC001', NULL, 'SECTION', '贷款结构：分条线', '利息收入/年初至期末累计 天数/当年天数/年日均', NULL);
 
 -- 贷款结构：分条线 下的配置
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (2, 1, 1, 1, NULL, NULL, 'LOAN001', '各项贷款', 'DATA', NULL, NULL, '管会系统-报表管理-贷款'),
 (3, 1, 1, 2, NULL, NULL, 'LOAN002', '人民币公司表内信贷资产（不含票据）', 'DATA', NULL, NULL, '管会系统-报表管理'),
 (4, 1, 1, 3, NULL, NULL, 'LOAN003', '行标小贷（不含贴现）', 'DATA', NULL, NULL, '管会系统-资产负债'),
@@ -24,11 +24,11 @@ INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_cate
 (7, 1, 1, 6, NULL, NULL, 'LOAN006', '外币贷款', 'DATA', NULL, NULL, '管会系统-报表管理');
 
 -- 横向分类标题：贷款结构：重点产品/客户
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (8, NULL, 0, 2, NULL, NULL, 'SEC002', NULL, 'SECTION', '贷款结构：重点产品/客户', NULL, NULL);
 
 -- 中长期贷款
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (9, 8, 1, 1, '中长期贷款', NULL, 'LOAN007', NULL, 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (10, 9, 2, 1, '中长期贷款', NULL, 'LOAN008', '1.流动资金贷款', 'DATA', NULL, NULL, '管会-产品分析报表'),
 (11, 9, 2, 2, '中长期贷款', NULL, 'LOAN009', '2.三年期以上流动资金贷款', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
@@ -37,74 +37,74 @@ INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_cate
 (14, 9, 2, 5, '中长期贷款', NULL, 'LOAN012', '5.按揭贷款', 'DATA', NULL, NULL, 'A0001-管会产品分析');
 
 -- 短期贷款
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (15, 8, 1, 2, '短期贷款', NULL, 'LOAN013', NULL, 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (16, 15, 2, 1, '短期贷款', NULL, 'LOAN014', '6.短贷', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (17, 15, 2, 2, '短期贷款', NULL, 'LOAN015', '7.超短贷', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (18, 15, 2, 3, '短期贷款', NULL, 'LOAN016', '8.房地产开发项目贷款', 'DATA', NULL, NULL, 'A0001-管会产品分析报表');
 
 -- 房地产和平台
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (19, 8, 1, 3, '房地产和平台', NULL, 'LOAN017', NULL, 'DATA', NULL, NULL, 'A0001-管会产品分析'),
 (20, 19, 2, 1, '房地产和平台', NULL, 'LOAN018', '9.经营性物业贷款', 'DATA', NULL, NULL, NULL),
 (21, 19, 2, 2, '房地产和平台', NULL, 'LOAN019', '10.城建公共类国企', 'DATA', NULL, NULL, '宁线提供');
 
 -- 小贷其他重点产品
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (22, 8, 1, 4, '小贷其他重点产品', NULL, 'LOAN020', NULL, 'DATA', NULL, NULL, NULL),
 (23, 22, 2, 1, '小贷其他重点产品', NULL, 'LOAN021', '16.园区（标准厂房）', 'DATA', NULL, NULL, '易链十台-行标规模'),
 (24, 22, 2, 2, '小贷其他重点产品', NULL, 'LOAN022', '17.一抵类房抵贷', 'DATA', NULL, NULL, '易链十台-行标规模'),
 (25, 22, 2, 3, '小贷其他重点产品', NULL, 'LOAN023', '18.二抵类房抵贷（余值贷）', 'DATA', NULL, NULL, '易链十台-行标规模');
 
 -- 其他指标
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (26, 8, 1, 5, '其他指标', NULL, 'LOAN024', '19.对公贷款分行前十大客户合计值', 'DATA', NULL, NULL, '管会系统-首页');
 
 -- 横向分类标题：债券资产结构
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (27, NULL, 0, 3, NULL, NULL, 'SEC003', NULL, 'SECTION', '债券资产结构', NULL, '汇总');
 
 -- 债务投资
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (28, 27, 1, 1, '债务投资', NULL, 'BOND001', NULL, 'DATA', NULL, NULL, NULL),
 (29, 28, 2, 1, '债务投资', '三分类', 'BOND002', 'FVTPL', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (30, 28, 2, 2, '债务投资', '三分类', 'BOND003', 'FVOCI', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (31, 28, 2, 3, '债务投资', '三分类', 'BOND004', 'AC', 'DATA', NULL, NULL, 'A0001-管会产品分析报表');
 
 -- 横向分类标题：同业资产结构
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (32, NULL, 0, 4, NULL, NULL, 'SEC004', NULL, 'SECTION', '同业资产结构', NULL, NULL);
 
 -- 同业资产
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (33, 32, 1, 1, NULL, NULL, 'INTER001', '存放同业', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (34, 32, 1, 2, NULL, NULL, 'INTER002', '银行同业借款', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (35, 32, 1, 3, NULL, NULL, 'INTER003', '同业投资', 'DATA', NULL, NULL, NULL);
 
 -- 横向分类标题：票证资产
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (36, NULL, 0, 5, NULL, NULL, 'SEC005', NULL, 'SECTION', '票证资产', NULL, '汇总');
 
 -- 表内持票
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (37, 36, 1, 1, '表内持票', NULL, 'BILL001', NULL, 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (38, 37, 2, 1, '表内持票', '持票分类', 'BILL002', '1.商票直贴', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (39, 37, 2, 2, '表内持票', '持票分类', 'BILL003', '2.银票直贴', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (40, 37, 2, 3, '表内持票', '持票分类', 'BILL004', '3.转贴现', 'DATA', NULL, NULL, NULL);
 
 -- 国内贸易融资
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (41, 36, 1, 2, '国内贸易融资', NULL, 'TRADE001', NULL, 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (42, 41, 2, 1, '国内贸易融资', '国内贸易融资分类', 'TRADE002', '1.议付', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (43, 41, 2, 2, '国内贸易融资', '国内贸易融资分类', 'TRADE003', '2.贷链', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (44, 41, 2, 3, '国内贸易融资', '国内贸易融资分类', 'TRADE004', '3.福费廷', 'DATA', NULL, NULL, NULL);
 
 -- 横向分类标题：其他资产
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (45, NULL, 0, 6, NULL, NULL, 'SEC006', NULL, 'SECTION', '其他资产', NULL, NULL);
 
 -- 其他资产
-INSERT INTO t_index_config (id, parent_id, level, sort_order, category, sub_category, index_code, index_name, row_type, section_title, section_note, remark) VALUES
+INSERT INTO t_index_config (id, parent_id, level, sort_order, merge_item, banner, index_code, index_name, row_type, section_title, section_note, remark) VALUES
 (46, 45, 1, 1, NULL, NULL, 'OTHER001', '缴存中央银行财政性存款', 'DATA', NULL, NULL, 'A0001-管会产品分析报表'),
 (47, 45, 1, 2, NULL, NULL, 'OTHER002', '现金', 'DATA', NULL, NULL, '建议取用分支机构'),
 (48, 45, 1, 3, NULL, NULL, 'TOTAL001', '总资产', 'DATA', NULL, NULL, NULL);

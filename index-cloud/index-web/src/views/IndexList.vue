@@ -18,10 +18,18 @@
 
     <!-- 数据表格 -->
     <el-table :data="tableData" border stripe v-loading="loading" style="width: 100%">
-      <el-table-column prop="indexName" label="指标名称" min-width="180" fixed="left" />
-      <el-table-column prop="indexCode" label="指标编号" width="120" />
-      <el-table-column prop="category" label="分类" width="80" />
-      <el-table-column prop="level" label="层级" width="70" align="center" />
+      <el-table-column label="指标名称" min-width="180" fixed="left">
+        <template #default="{ row }">{{ row.config?.indexName }}</template>
+      </el-table-column>
+      <el-table-column label="指标编号" width="120">
+        <template #default="{ row }">{{ row.config?.indexCode }}</template>
+      </el-table-column>
+      <el-table-column label="分类" width="80">
+        <template #default="{ row }">{{ row.config?.category }}</template>
+      </el-table-column>
+      <el-table-column label="层级" width="70" align="center">
+        <template #default="{ row }">{{ row.config?.level }}</template>
+      </el-table-column>
       <el-table-column prop="balance" label="余额(万元)" width="130" align="right">
         <template #default="{ row }">{{ formatNumber(row.balance) }}</template>
       </el-table-column>
@@ -46,7 +54,9 @@
       <el-table-column prop="interestRate" label="付息率(%)" width="110" align="right">
         <template #default="{ row }">{{ formatPercent(row.interestRate) }}</template>
       </el-table-column>
-      <el-table-column prop="remark" label="备注" min-width="150" />
+      <el-table-column label="备注" min-width="150">
+        <template #default="{ row }">{{ row.config?.remark }}</template>
+      </el-table-column>
     </el-table>
 
     <!-- 分页 -->

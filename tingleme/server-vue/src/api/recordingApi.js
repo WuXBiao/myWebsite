@@ -93,7 +93,45 @@ export const recordingApi = {
 
   // 下载录音
   getDownloadUrl(id) {
-    return `http://localhost:8080/api/recordings/download/${id}`;
+    return `http://localhost:8080/api/recordings/download?id=${id}`;
+  },
+
+  // 下载录音（blob 方式，带请求头）
+  async downloadRecording(id, defaultFileName = 'recording.mp3') {
+    try {
+      const response = await apiClient.get('/recordings/download', {
+        params: { id },
+        responseType: 'blob'
+      });
+      
+      // 从响应头获取文件名
+      let fileName = defaultFileName;
+      const contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (fileNameMatch && fileNameMatch[1]) {
+          fileName = decodeURIComponent(fileNameMatch[1]);
+        }
+      }
+      
+      // 创建 Blob URL 并下载
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      
+      // 清理
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      return true;
+    } catch (error) {
+      console.error('下载录音失败:', error);
+      throw error;
+    }
   }
 };
 
