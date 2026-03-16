@@ -13,6 +13,7 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		api.POST("/register", controllers.Register)
 		api.POST("/login", controllers.Login)
+		api.POST("/devices/register", controllers.RegisterDevice) // Device self-registration
 	}
 
 	// Protected routes
@@ -20,6 +21,9 @@ func SetupRoutes(r *gin.Engine) {
 	protected.Use(middleware.AuthMiddleware())
 	{
 		protected.GET("/devices", controllers.GetDevices)
+		protected.GET("/devices/scan", controllers.ScanDevices)
+		protected.GET("/devices/scan-usb", controllers.ScanUSBDevices)
+		protected.GET("/devices/:device_id", controllers.GetDeviceByID)
 		protected.POST("/devices", controllers.CreateDevice)
 		protected.DELETE("/devices/:id", controllers.DeleteDevice)
 	}
