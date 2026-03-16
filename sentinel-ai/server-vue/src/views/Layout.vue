@@ -14,6 +14,10 @@
           <el-icon><Cpu /></el-icon>
           <span>Devices</span>
         </el-menu-item>
+        <el-menu-item index="/camera">
+          <el-icon><VideoCamera /></el-icon>
+          <span>Camera</span>
+        </el-menu-item>
         <el-menu-item index="/events">
           <el-icon><Bell /></el-icon>
           <span>Events</span>
@@ -36,6 +40,7 @@
 
 <script setup lang="ts">
 import { useUserStore } from '../store/user'
+import { Monitor, Cpu, VideoCamera, Bell } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 

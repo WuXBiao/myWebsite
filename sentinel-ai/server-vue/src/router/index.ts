@@ -4,6 +4,7 @@ import Login from '../views/Login.vue'
 import Dashboard from '../views/Dashboard.vue'
 import Devices from '../views/Devices.vue'
 import Events from '../views/Events.vue'
+import CameraView from '../views/CameraView.vue'
 
 const routes = [
   {
@@ -30,6 +31,11 @@ const routes = [
         path: 'events',
         name: 'Events',
         component: Events
+      },
+      {
+        path: 'camera',
+        name: 'CameraView',
+        component: CameraView
       }
     ]
   }

@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sentinel-ai/server-go/models"
+	"sentinel-ai/server-go/utils"
+	"strings"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -122,4 +126,79 @@ func InitDB() {
 	}
 
 	log.Println("MySQL Database connected and tables created successfully.")
+
+	// Auto-add local camera device for testing
+	addDefaultCameraDevice()
+}
+
+func addDefaultCameraDevice() {
+	// Check if default camera already exists
+	var existingDevice models.Device
+	if result := DB.Where("device_id = ?", "camera_default_local").First(&existingDevice); result.Error == nil {
+		log.Println("Default camera device already exists, skipping...")
+		return
+	}
+
+	// Try to scan for camera devices
+	cameraDevices, err := utils.ScanCameraDevices()
+	if err != nil || len(cameraDevices) == 0 {
+		log.Println("No camera devices found, creating virtual default camera device for testing...")
+		// Create a virtual default camera device
+		defaultCamera := models.Device{
+			Name:         "Local Computer Camera",
+			HardwareCode: "camera_default_local",
+			Status:       "offline",
+			IP:           "127.0.0.1",
+			LastSeen:     time.Now(),
+		}
+		if result := DB.Create(&defaultCamera); result.Error != nil {
+			log.Printf("Failed to create default camera device: %v", result.Error)
+		} else {
+			log.Println("✅ Default camera device created successfully")
+		}
+		return
+	}
+
+	// Add the first detected camera as default device
+	firstCamera := cameraDevices[0]
+	// Clean camera name - remove special characters that might cause SQL issues
+	cleanName := sanitizeCameraName(firstCamera.Name)
+
+	defaultCamera := models.Device{
+		Name:         cleanName,
+		HardwareCode: "camera_default_local",
+		Status:       "offline",
+		IP:           "127.0.0.1",
+		LastSeen:     time.Now(),
+	}
+	if result := DB.Create(&defaultCamera); result.Error != nil {
+		log.Printf("Failed to create default camera device: %v", result.Error)
+	} else {
+		log.Printf("✅ Default camera device created: %s", cleanName)
+	}
+}
+
+func sanitizeCameraName(name string) string {
+	// Remove problematic characters
+	replacements := map[string]string{
+		"\"": "",
+		"'":  "",
+		"`":  "",
+		"\n": " ",
+		"\r": " ",
+	}
+
+	for old, new := range replacements {
+		name = strings.ReplaceAll(name, old, new)
+	}
+
+	// Trim whitespace
+	name = strings.TrimSpace(name)
+
+	// Limit length
+	if len(name) > 255 {
+		name = name[:255]
+	}
+
+	return name
 }

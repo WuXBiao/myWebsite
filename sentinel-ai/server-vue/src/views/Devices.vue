@@ -5,6 +5,9 @@
       <el-button type="primary" @click="handleScanUSB" :loading="scanning">
         {{ scanning ? 'Scanning USB...' : 'Scan USB Devices' }}
       </el-button>
+      <el-button type="warning" @click="handleScanCamera" :loading="scanningCamera">
+        {{ scanningCamera ? 'Scanning Camera...' : 'Scan Camera Devices' }}
+      </el-button>
       <el-button type="info" @click="handleScan" :loading="scanningRegistered">
         {{ scanningRegistered ? 'Scanning...' : 'Scan Registered Devices' }}
       </el-button>
@@ -24,8 +27,9 @@
         </template>
       </el-table-column>
       <el-table-column prop="last_seen" label="Last Seen" width="180" />
-      <el-table-column label="Action" width="150">
+      <el-table-column label="Action" width="220">
         <template #default="scope">
+          <el-button size="small" type="primary" @click="handleViewCamera(scope.row)">View</el-button>
           <el-popconfirm title="Are you sure to delete this?" @confirm="handleDelete(scope.row.id)">
             <template #reference>
               <el-button size="small" type="danger">Delete</el-button>
@@ -92,14 +96,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import request from '../utils/request'
 import { ElMessage } from 'element-plus'
+
+const router = useRouter()
 
 const devices = ref([])
 const dialogVisible = ref(false)
 const scanDialogVisible = ref(false)
 const scanning = ref(false)
 const scanningRegistered = ref(false)
+const scanningCamera = ref(false)
 const scannedDevices = ref([])
 const scanType = ref('usb')
 const form = ref({
@@ -128,6 +136,21 @@ const handleScanUSB = async () => {
     ElMessage.error('Failed to scan USB devices')
   } finally {
     scanning.value = false
+  }
+}
+
+const handleScanCamera = async () => {
+  scanningCamera.value = true
+  try {
+    const res: any = await request.get('/devices/scan-camera')
+    scannedDevices.value = res.devices || []
+    scanType.value = 'camera'
+    scanDialogVisible.value = true
+    ElMessage.success(`Found ${scannedDevices.value.length} camera device(s)`)
+  } catch (error) {
+    ElMessage.error('Failed to scan camera devices')
+  } finally {
+    scanningCamera.value = false
   }
 }
 
@@ -184,6 +207,17 @@ const handleDelete = async (id: number) => {
   } catch (error) {
     ElMessage.error('Failed to delete device')
   }
+}
+
+const handleViewCamera = (device: any) => {
+  router.push({
+    name: 'CameraView',
+    query: {
+      id: device.id,
+      name: device.name,
+      device_id: device.device_id
+    }
+  })
 }
 
 onMounted(() => {

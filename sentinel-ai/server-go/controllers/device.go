@@ -199,3 +199,43 @@ func ScanUSBDevices(c *gin.Context) {
 		"count":   len(response),
 	})
 }
+
+func ScanCameraDevices(c *gin.Context) {
+	cameraDevices, err := utils.ScanCameraDevices()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan camera devices", "details": err.Error()})
+		return
+	}
+
+	var registeredDeviceIDs map[string]bool = make(map[string]bool)
+	var devices []models.Device
+	database.DB.Find(&devices)
+	for _, device := range devices {
+		registeredDeviceIDs[device.HardwareCode] = true
+	}
+
+	type CameraDeviceResponse struct {
+		DeviceID     string `json:"device_id"`
+		Name         string `json:"name"`
+		Path         string `json:"path"`
+		Manufacturer string `json:"manufacturer"`
+		IsAdded      bool   `json:"is_added"`
+	}
+
+	response := make([]CameraDeviceResponse, 0)
+	for _, camera := range cameraDevices {
+		isAdded := registeredDeviceIDs[camera.DeviceID]
+		response = append(response, CameraDeviceResponse{
+			DeviceID:     camera.DeviceID,
+			Name:         camera.Name,
+			Path:         camera.Path,
+			Manufacturer: camera.Manufacturer,
+			IsAdded:      isAdded,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"devices": response,
+		"count":   len(response),
+	})
+}

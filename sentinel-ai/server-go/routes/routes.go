@@ -23,6 +23,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/devices", controllers.GetDevices)
 		protected.GET("/devices/scan", controllers.ScanDevices)
 		protected.GET("/devices/scan-usb", controllers.ScanUSBDevices)
+		protected.GET("/devices/scan-camera", controllers.ScanCameraDevices)
 		protected.GET("/devices/:device_id", controllers.GetDeviceByID)
 		protected.POST("/devices", controllers.CreateDevice)
 		protected.DELETE("/devices/:id", controllers.DeleteDevice)
