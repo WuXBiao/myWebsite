@@ -2,6 +2,7 @@ package routes
 
 import (
 	"sentinel-ai/server-go/controllers"
+	"sentinel-ai/server-go/handlers"
 	"sentinel-ai/server-go/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -27,6 +28,11 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/devices/:device_id", controllers.GetDeviceByID)
 		protected.POST("/devices", controllers.CreateDevice)
 		protected.DELETE("/devices/:id", controllers.DeleteDevice)
+
+		// AI Recognition routes
+		protected.POST("/ai/analyze", handlers.AnalyzeFrame)
+		protected.POST("/ai/detect", handlers.DetectObjects)
+		protected.POST("/ai/gesture", handlers.RecognizeGesture)
 	}
 
 	// Stream routes (WebSocket)
