@@ -6,7 +6,8 @@ from ultralytics import YOLO
 app = Flask(__name__)
 
 # Load YOLOv8 model for object detection
-yolo_model = YOLO('yolov8n.pt')
+# Using large model for highest accuracy (yolov8l.pt)
+yolo_model = YOLO('yolov8l.pt')
 
 # MediaPipe initialization (optional)
 MEDIAPIPE_AVAILABLE = False
@@ -43,7 +44,10 @@ def detect():
     if img is None:
         return jsonify({"error": "Invalid image"}), 400
 
-    results = yolo_model(img)
+    # Run inference with optimized parameters
+    # conf: confidence threshold (0.45 for better accuracy)
+    # iou: IoU threshold for NMS (0.4 for stricter filtering)
+    results = yolo_model(img, conf=0.45, iou=0.4)
     
     detections = []
     for result in results:
@@ -121,8 +125,8 @@ def analyze():
         return jsonify({"error": "Invalid image"}), 400
 
     try:
-        # Object detection
-        yolo_results = yolo_model(img)
+        # Object detection with optimized parameters
+        yolo_results = yolo_model(img, conf=0.45, iou=0.4)
         detections = []
         for result in yolo_results:
             for box in result.boxes:
