@@ -154,6 +154,36 @@ func GetDeviceByID(c *gin.Context) {
 	c.JSON(http.StatusOK, device)
 }
 
+// getRegisteredDeviceIDs retrieves all registered device IDs from database
+func getRegisteredDeviceIDs() map[string]bool {
+	registeredDeviceIDs := make(map[string]bool)
+	var devices []models.Device
+	database.DB.Find(&devices)
+	for _, device := range devices {
+		registeredDeviceIDs[device.HardwareCode] = true
+	}
+	return registeredDeviceIDs
+}
+
+type USBDeviceResponse struct {
+	DeviceID     string `json:"device_id"`
+	Name         string `json:"name"`
+	Manufacturer string `json:"manufacturer"`
+	Model        string `json:"model"`
+	SerialNumber string `json:"serial_number"`
+	VendorID     string `json:"vendor_id"`
+	ProductID    string `json:"product_id"`
+	IsAdded      bool   `json:"is_added"`
+}
+
+type CameraDeviceResponse struct {
+	DeviceID     string `json:"device_id"`
+	Name         string `json:"name"`
+	Path         string `json:"path"`
+	Manufacturer string `json:"manufacturer"`
+	IsAdded      bool   `json:"is_added"`
+}
+
 func ScanUSBDevices(c *gin.Context) {
 	usbDevices, err := utils.ScanUSBDevices()
 	if err != nil {
@@ -161,28 +191,11 @@ func ScanUSBDevices(c *gin.Context) {
 		return
 	}
 
-	var registeredDeviceIDs map[string]bool = make(map[string]bool)
-	var devices []models.Device
-	database.DB.Find(&devices)
-	for _, device := range devices {
-		registeredDeviceIDs[device.HardwareCode] = true
-	}
+	registeredDeviceIDs := getRegisteredDeviceIDs()
 
-	type USBDeviceResponse struct {
-		DeviceID     string `json:"device_id"`
-		Name         string `json:"name"`
-		Manufacturer string `json:"manufacturer"`
-		Model        string `json:"model"`
-		SerialNumber string `json:"serial_number"`
-		VendorID     string `json:"vendor_id"`
-		ProductID    string `json:"product_id"`
-		IsAdded      bool   `json:"is_added"`
-	}
-
-	response := make([]USBDeviceResponse, 0)
-	for _, usbDevice := range usbDevices {
-		isAdded := registeredDeviceIDs[usbDevice.DeviceID]
-		response = append(response, USBDeviceResponse{
+	response := make([]USBDeviceResponse, len(usbDevices))
+	for i, usbDevice := range usbDevices {
+		response[i] = USBDeviceResponse{
 			DeviceID:     usbDevice.DeviceID,
 			Name:         usbDevice.Name,
 			Manufacturer: usbDevice.Manufacturer,
@@ -190,8 +203,8 @@ func ScanUSBDevices(c *gin.Context) {
 			SerialNumber: usbDevice.SerialNumber,
 			VendorID:     usbDevice.VendorID,
 			ProductID:    usbDevice.ProductID,
-			IsAdded:      isAdded,
-		})
+			IsAdded:      registeredDeviceIDs[usbDevice.DeviceID],
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -207,31 +220,17 @@ func ScanCameraDevices(c *gin.Context) {
 		return
 	}
 
-	var registeredDeviceIDs map[string]bool = make(map[string]bool)
-	var devices []models.Device
-	database.DB.Find(&devices)
-	for _, device := range devices {
-		registeredDeviceIDs[device.HardwareCode] = true
-	}
+	registeredDeviceIDs := getRegisteredDeviceIDs()
 
-	type CameraDeviceResponse struct {
-		DeviceID     string `json:"device_id"`
-		Name         string `json:"name"`
-		Path         string `json:"path"`
-		Manufacturer string `json:"manufacturer"`
-		IsAdded      bool   `json:"is_added"`
-	}
-
-	response := make([]CameraDeviceResponse, 0)
-	for _, camera := range cameraDevices {
-		isAdded := registeredDeviceIDs[camera.DeviceID]
-		response = append(response, CameraDeviceResponse{
+	response := make([]CameraDeviceResponse, len(cameraDevices))
+	for i, camera := range cameraDevices {
+		response[i] = CameraDeviceResponse{
 			DeviceID:     camera.DeviceID,
 			Name:         camera.Name,
 			Path:         camera.Path,
 			Manufacturer: camera.Manufacturer,
-			IsAdded:      isAdded,
-		})
+			IsAdded:      registeredDeviceIDs[camera.DeviceID],
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{

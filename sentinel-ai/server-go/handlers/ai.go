@@ -13,6 +13,8 @@ import (
 
 const AIServiceURL = "http://localhost:5001"
 
+var httpClient = &http.Client{}
+
 type DetectionResult struct {
 	Class      string    `json:"class"`
 	Confidence float64   `json:"confidence"`
@@ -37,78 +39,77 @@ type AnalysisResponse struct {
 	Gestures []Gesture         `json:"gestures"`
 }
 
-// AnalyzeFrame analyzes a video frame for objects and gestures
-func AnalyzeFrame(c *gin.Context) {
-	fmt.Println("[AI] AnalyzeFrame called")
-	// Get image file from request
+// getImageFromRequest extracts image data from request
+func getImageFromRequest(c *gin.Context) ([]byte, error) {
 	file, err := c.FormFile("image")
 	if err != nil {
-		fmt.Println("[AI] Error getting image file:", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No image provided"})
-		return
+		return nil, fmt.Errorf("no image provided")
 	}
-	fmt.Println("[AI] Image file received, size:", file.Size)
 
-	// Open the file
 	src, err := file.Open()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to open image"})
-		return
+		return nil, fmt.Errorf("failed to open image")
 	}
 	defer src.Close()
 
-	// Read file content
 	imageData, err := io.ReadAll(src)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read image"})
-		return
+		return nil, fmt.Errorf("failed to read image")
 	}
 
-	// Create multipart request body
+	return imageData, nil
+}
+
+// sendToAIService sends image data to AI service and returns the response
+func sendToAIService(imageData []byte, endpoint string) (map[string]interface{}, error) {
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 
-	// Add image field
 	part, err := writer.CreateFormFile("image", "frame.jpg")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create form file"})
-		return
+		return nil, fmt.Errorf("failed to create form file")
 	}
 
 	if _, err := part.Write(imageData); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write image data"})
-		return
+		return nil, fmt.Errorf("failed to write image data")
 	}
 
-	// Close the writer to finalize the multipart message
 	if err := writer.Close(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to close writer"})
-		return
+		return nil, fmt.Errorf("failed to close writer")
 	}
 
-	// Create request to AI service
-	req, err := http.NewRequest("POST", AIServiceURL+"/analyze", body)
+	req, err := http.NewRequest("POST", AIServiceURL+endpoint, body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
-		return
+		return nil, fmt.Errorf("failed to create request")
 	}
 
-	// Set content type with boundary
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	// Send request to AI service
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to AI service"})
-		return
+		return nil, fmt.Errorf("failed to connect to AI service")
 	}
 	defer resp.Body.Close()
 
-	// Parse response
 	var result map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse AI response"})
+		return nil, fmt.Errorf("failed to parse AI response")
+	}
+
+	return result, nil
+}
+
+// AnalyzeFrame analyzes a video frame for objects and gestures
+func AnalyzeFrame(c *gin.Context) {
+	imageData, err := getImageFromRequest(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	result, err := sendToAIService(imageData, "/analyze")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -117,44 +118,15 @@ func AnalyzeFrame(c *gin.Context) {
 
 // DetectObjects detects objects in a frame
 func DetectObjects(c *gin.Context) {
-	file, err := c.FormFile("image")
+	imageData, err := getImageFromRequest(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No image provided"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	src, err := file.Open()
+	result, err := sendToAIService(imageData, "/detect")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to open image"})
-		return
-	}
-	defer src.Close()
-
-	imageData, err := io.ReadAll(src)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read image"})
-		return
-	}
-
-	req, err := createMultipartRequest(imageData)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
-		return
-	}
-
-	req.URL.Path = "/detect"
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to AI service"})
-		return
-	}
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -163,67 +135,17 @@ func DetectObjects(c *gin.Context) {
 
 // RecognizeGesture recognizes hand gestures in a frame
 func RecognizeGesture(c *gin.Context) {
-	file, err := c.FormFile("image")
+	imageData, err := getImageFromRequest(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No image provided"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	src, err := file.Open()
+	result, err := sendToAIService(imageData, "/recognize-gesture")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to open image"})
-		return
-	}
-	defer src.Close()
-
-	imageData, err := io.ReadAll(src)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read image"})
-		return
-	}
-
-	req, err := createMultipartRequest(imageData)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
-		return
-	}
-
-	req.URL.Path = "/recognize-gesture"
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to AI service"})
-		return
-	}
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, result)
-}
-
-// createMultipartRequest creates a multipart form request with image data
-func createMultipartRequest(imageData []byte) (*http.Request, error) {
-	body := new(bytes.Buffer)
-
-	// Write multipart boundary
-	boundary := "----WebKitFormBoundary7MA4YWxkTrZu0gW"
-	body.WriteString(fmt.Sprintf("--%s\r\n", boundary))
-	body.WriteString("Content-Disposition: form-data; name=\"image\"; filename=\"frame.jpg\"\r\n")
-	body.WriteString("Content-Type: image/jpeg\r\n\r\n")
-	body.Write(imageData)
-	body.WriteString(fmt.Sprintf("\r\n--%s--\r\n", boundary))
-
-	req, err := http.NewRequest("POST", AIServiceURL+"/analyze", body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", fmt.Sprintf("multipart/form-data; boundary=%s", boundary))
-	return req, nil
 }

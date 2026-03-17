@@ -189,15 +189,10 @@ except Exception as e:
     MEDIAPIPE_AVAILABLE = False
     hand_landmarker = None
 
-@app.route('/health', methods=['GET'])
-def health():
-    return jsonify({"status": "ok", "service": "ai-service"})
-
-@app.route('/detect', methods=['POST'])
-def detect():
-    """Object detection using YOLOv8"""
+def decode_image_from_request():
+    """Decode image from request"""
     if 'image' not in request.files:
-        return jsonify({"error": "No image provided"}), 400
+        return None, jsonify({"error": "No image provided"}), 400
     
     file = request.files['image']
     img_bytes = file.read()
@@ -205,13 +200,13 @@ def detect():
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     
     if img is None:
-        return jsonify({"error": "Invalid image"}), 400
-
-    # Run inference with optimized parameters
-    # conf: confidence threshold (0.45 for better accuracy)
-    # iou: IoU threshold for NMS (0.4 for stricter filtering)
-    results = yolo_model(img, conf=0.45, iou=0.4)
+        return None, jsonify({"error": "Invalid image"}), 400
     
+    return img, None, None
+
+def detect_objects(img):
+    """Detect objects using YOLOv8"""
+    results = yolo_model(img, conf=0.45, iou=0.4)
     detections = []
     for result in results:
         for box in result.boxes:
@@ -222,56 +217,24 @@ def detect():
                 "confidence": float(box.conf),
                 "bbox": box.xyxy.tolist()[0]
             })
-            
-    return jsonify({
-        "message": "Detection successful",
-        "objects": detections
-    })
+    return detections
 
-@app.route('/recognize-gesture', methods=['POST'])
-def recognize_gesture():
-    """Hand gesture recognition using MediaPipe"""
-    if 'image' not in request.files:
-        return jsonify({"error": "No image provided"}), 400
-    
+def recognize_gestures(img):
+    """Recognize hand gestures using MediaPipe"""
     if not MEDIAPIPE_AVAILABLE or hand_landmarker is None:
-        return jsonify({"message": "Gesture recognition disabled", "gestures": []})
+        return []
     
-    file = request.files['image']
-    img_bytes = file.read()
-    nparr = np.frombuffer(img_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
-    if img is None:
-        return jsonify({"error": "Invalid image"}), 400
-
     try:
-        # Convert BGR to RGB for MediaPipe
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        
-        # Create MediaPipe Image
         from mediapipe import Image as MPImage
         mp_image = MPImage(image_format=mp.ImageFormat.SRGB, data=img_rgb)
-        
-        # Detect hand landmarks
         detection_result = hand_landmarker.detect(mp_image)
         
         gestures = []
         if detection_result.hand_landmarks:
             for hand_landmarks, handedness in zip(detection_result.hand_landmarks, detection_result.handedness):
-                # Extract hand landmarks
-                landmarks = []
-                for landmark in hand_landmarks:
-                    landmarks.append({
-                        "x": landmark.x,
-                        "y": landmark.y,
-                        "z": landmark.z
-                    })
-                
-                # Detect gesture type
+                landmarks = [{"x": lm.x, "y": lm.y, "z": lm.z} for lm in hand_landmarks]
                 gesture_type = detect_gesture_type(landmarks)
-                
-                # Convert hand label to Chinese
                 hand_label = handedness[0].category_name
                 hand_chinese = "右手" if hand_label == "Right" else "左手"
                 
@@ -281,86 +244,51 @@ def recognize_gesture():
                     "confidence": float(handedness[0].score),
                     "landmarks": landmarks
                 })
-        
-        return jsonify({
-            "message": "Gesture recognition successful",
-            "gestures": gestures
-        })
+        return gestures
     except Exception as e:
         print(f"Gesture recognition error: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"Gesture recognition error: {str(e)}"}), 500
+        return []
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok", "service": "ai-service"})
+
+@app.route('/detect', methods=['POST'])
+def detect():
+    """Object detection using YOLOv8"""
+    img, error_response, error_code = decode_image_from_request()
+    if img is None:
+        return error_response, error_code
+    
+    detections = detect_objects(img)
+    return jsonify({
+        "message": "Detection successful",
+        "objects": detections
+    })
+
+@app.route('/recognize-gesture', methods=['POST'])
+def recognize_gesture():
+    """Hand gesture recognition using MediaPipe"""
+    img, error_response, error_code = decode_image_from_request()
+    if img is None:
+        return error_response, error_code
+    
+    gestures = recognize_gestures(img)
+    return jsonify({
+        "message": "Gesture recognition successful",
+        "gestures": gestures
+    })
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
     """Combined analysis: object detection + gesture recognition"""
-    if 'image' not in request.files:
-        return jsonify({"error": "No image provided"}), 400
-    
-    file = request.files['image']
-    img_bytes = file.read()
-    nparr = np.frombuffer(img_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
+    img, error_response, error_code = decode_image_from_request()
     if img is None:
-        return jsonify({"error": "Invalid image"}), 400
-
+        return error_response, error_code
+    
     try:
-        # Object detection with optimized parameters
-        yolo_results = yolo_model(img, conf=0.45, iou=0.4)
-        detections = []
-        for result in yolo_results:
-            for box in result.boxes:
-                english_name = yolo_model.names[int(box.cls)]
-                chinese_name = get_chinese_name(english_name)
-                detections.append({
-                    "class": chinese_name,
-                    "confidence": float(box.conf),
-                    "bbox": box.xyxy.tolist()[0]
-                })
-        
-        # Gesture recognition
-        gestures = []
-        if MEDIAPIPE_AVAILABLE and hand_landmarker is not None:
-            try:
-                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                
-                # Create MediaPipe Image
-                from mediapipe import Image as MPImage
-                mp_image = MPImage(image_format=mp.ImageFormat.SRGB, data=img_rgb)
-                
-                # Detect hand landmarks
-                detection_result = hand_landmarker.detect(mp_image)
-                
-                if detection_result.hand_landmarks:
-                    for hand_landmarks, handedness in zip(detection_result.hand_landmarks, detection_result.handedness):
-                        landmarks = []
-                        for landmark in hand_landmarks:
-                            landmarks.append({
-                                "x": landmark.x,
-                                "y": landmark.y,
-                                "z": landmark.z
-                            })
-                        
-                        # Detect gesture type
-                        gesture_type = detect_gesture_type(landmarks)
-                        
-                        # Convert hand label to Chinese
-                        hand_label = handedness[0].category_name
-                        hand_chinese = "右手" if hand_label == "Right" else "左手"
-                        
-                        gestures.append({
-                            "hand": hand_chinese,
-                            "gesture": gesture_type,
-                            "confidence": float(handedness[0].score),
-                            "landmarks": landmarks
-                        })
-            except Exception as e:
-                print(f"Gesture recognition error: {e}")
-                import traceback
-                traceback.print_exc()
-                # Continue with object detection results even if gesture recognition fails
+        detections = detect_objects(img)
+        gestures = recognize_gestures(img)
         
         return jsonify({
             "message": "Analysis successful",
