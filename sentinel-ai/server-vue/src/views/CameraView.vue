@@ -317,8 +317,16 @@ const drawResults = (ctx: CanvasRenderingContext2D, results: any) => {
     ctx.lineWidth = 2
 
     results.gestures.forEach((gesture: any) => {
+      if (!gesture.landmarks || gesture.landmarks.length === 0) {
+        return
+      }
+      
       // Draw landmarks as circles
       gesture.landmarks.forEach((landmark: any, idx: number) => {
+        if (!landmark || typeof landmark.x === 'undefined' || typeof landmark.y === 'undefined') {
+          return
+        }
+        
         const x = landmark.x * width
         const y = landmark.y * height
 
@@ -329,22 +337,28 @@ const drawResults = (ctx: CanvasRenderingContext2D, results: any) => {
         // Draw connections between landmarks
         if (idx > 0) {
           const prevLandmark = gesture.landmarks[idx - 1]
-          const prevX = prevLandmark.x * width
-          const prevY = prevLandmark.y * height
-          ctx.beginPath()
-          ctx.moveTo(prevX, prevY)
-          ctx.lineTo(x, y)
-          ctx.stroke()
+          if (prevLandmark && typeof prevLandmark.x !== 'undefined' && typeof prevLandmark.y !== 'undefined') {
+            const prevX = prevLandmark.x * width
+            const prevY = prevLandmark.y * height
+            ctx.beginPath()
+            ctx.moveTo(prevX, prevY)
+            ctx.lineTo(x, y)
+            ctx.stroke()
+          }
         }
       })
 
       // Draw hand label
-      const firstLandmark = gesture.landmarks[0]
-      const labelX = firstLandmark.x * width
-      const labelY = firstLandmark.y * height
-      ctx.font = '16px Arial'
-      ctx.fillStyle = '#FF0000'
-      ctx.fillText(`${gesture.hand}`, labelX, labelY - 10)
+      if (gesture.landmarks.length > 0) {
+        const firstLandmark = gesture.landmarks[0]
+        if (firstLandmark && typeof firstLandmark.x !== 'undefined' && typeof firstLandmark.y !== 'undefined') {
+          const labelX = firstLandmark.x * width
+          const labelY = firstLandmark.y * height
+          ctx.font = '16px Arial'
+          ctx.fillStyle = '#FF0000'
+          ctx.fillText(`${gesture.hand} ${gesture.gesture || ''}`, labelX, labelY - 10)
+        }
+      }
     })
   }
 }

@@ -99,22 +99,95 @@ def get_chinese_name(english_name):
     english_lower = english_name.lower()
     return CHINESE_NAMES.get(english_lower, english_name)
 
-# MediaPipe initialization (optional)
+def detect_gesture_type(landmarks):
+    """Detect gesture type based on hand landmarks"""
+    if not landmarks or len(landmarks) < 21:
+        return "未知"
+    
+    # Key landmark indices
+    THUMB_TIP = 4
+    INDEX_TIP = 8
+    MIDDLE_TIP = 12
+    RING_TIP = 16
+    PINKY_TIP = 20
+    WRIST = 0
+    
+    # Get landmark positions
+    thumb = landmarks[THUMB_TIP]
+    index = landmarks[INDEX_TIP]
+    middle = landmarks[MIDDLE_TIP]
+    ring = landmarks[RING_TIP]
+    pinky = landmarks[PINKY_TIP]
+    wrist = landmarks[WRIST]
+    
+    # Helper function to check if finger is extended
+    def is_extended(tip, base_idx):
+        base = landmarks[base_idx]
+        return tip['y'] < base['y'] - 0.05
+    
+    # Check finger extensions
+    thumb_extended = is_extended(thumb, 2)
+    index_extended = is_extended(index, 6)
+    middle_extended = is_extended(middle, 10)
+    ring_extended = is_extended(ring, 14)
+    pinky_extended = is_extended(pinky, 18)
+    
+    # Detect specific gestures
+    extended_count = sum([index_extended, middle_extended, ring_extended, pinky_extended])
+    
+    # Peace sign (V gesture)
+    if index_extended and middle_extended and not ring_extended and not pinky_extended:
+        return "胜利手势"
+    
+    # Thumbs up
+    if thumb_extended and not index_extended and not middle_extended and not ring_extended and not pinky_extended:
+        if thumb['y'] < wrist['y']:
+            return "竖起大拇指"
+    
+    # OK gesture
+    if not index_extended and not middle_extended and ring_extended and pinky_extended:
+        return "OK手势"
+    
+    # Open palm (all fingers extended)
+    if index_extended and middle_extended and ring_extended and pinky_extended:
+        return "张开手掌"
+    
+    # Closed fist (no fingers extended)
+    if not index_extended and not middle_extended and not ring_extended and not pinky_extended:
+        return "握拳"
+    
+    # Pointing gesture
+    if index_extended and not middle_extended and not ring_extended and not pinky_extended:
+        return "指向"
+    
+    return "其他手势"
+
+# MediaPipe initialization
 MEDIAPIPE_AVAILABLE = False
-hands = None
+hand_landmarker = None
 try:
-    from mediapipe.python.solutions import hands as mp_hands
-    hands = mp_hands.Hands(
-        static_image_mode=True,
-        max_num_hands=2,
-        min_detection_confidence=0.5,
+    from mediapipe.tasks import python
+    from mediapipe.tasks.python import vision
+    import mediapipe as mp
+    
+    # Create hand landmarker with model file
+    model_path = 'hand_landmarker.task'
+    base_options = python.BaseOptions(model_asset_path=model_path)
+    options = vision.HandLandmarkerOptions(
+        base_options=base_options,
+        num_hands=2,
+        min_hand_detection_confidence=0.5,
+        min_hand_presence_confidence=0.5,
         min_tracking_confidence=0.5
     )
+    hand_landmarker = vision.HandLandmarker.create_from_options(options)
     MEDIAPIPE_AVAILABLE = True
-    print("MediaPipe loaded successfully")
+    print("MediaPipe hand landmarker loaded successfully")
 except Exception as e:
     print(f"Warning: MediaPipe not available: {e}")
     print("Gesture recognition will be disabled")
+    MEDIAPIPE_AVAILABLE = False
+    hand_landmarker = None
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -161,8 +234,8 @@ def recognize_gesture():
     if 'image' not in request.files:
         return jsonify({"error": "No image provided"}), 400
     
-    if not MEDIAPIPE_AVAILABLE or hands is None:
-        return jsonify({"error": "MediaPipe not available"}), 503
+    if not MEDIAPIPE_AVAILABLE or hand_landmarker is None:
+        return jsonify({"message": "Gesture recognition disabled", "gestures": []})
     
     file = request.files['image']
     img_bytes = file.read()
@@ -173,25 +246,39 @@ def recognize_gesture():
         return jsonify({"error": "Invalid image"}), 400
 
     try:
-        # Convert BGR to RGB
+        # Convert BGR to RGB for MediaPipe
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = hands.process(img_rgb)
+        
+        # Create MediaPipe Image
+        from mediapipe import Image as MPImage
+        mp_image = MPImage(image_format=mp.ImageFormat.SRGB, data=img_rgb)
+        
+        # Detect hand landmarks
+        detection_result = hand_landmarker.detect(mp_image)
         
         gestures = []
-        if results.multi_hand_landmarks:
-            for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+        if detection_result.hand_landmarks:
+            for hand_landmarks, handedness in zip(detection_result.hand_landmarks, detection_result.handedness):
                 # Extract hand landmarks
                 landmarks = []
-                for landmark in hand_landmarks.landmark:
+                for landmark in hand_landmarks:
                     landmarks.append({
                         "x": landmark.x,
                         "y": landmark.y,
                         "z": landmark.z
                     })
                 
+                # Detect gesture type
+                gesture_type = detect_gesture_type(landmarks)
+                
+                # Convert hand label to Chinese
+                hand_label = handedness[0].category_name
+                hand_chinese = "右手" if hand_label == "Right" else "左手"
+                
                 gestures.append({
-                    "hand": handedness.classification[0].label,
-                    "confidence": float(handedness.classification[0].score),
+                    "hand": hand_chinese,
+                    "gesture": gesture_type,
+                    "confidence": float(handedness[0].score),
                     "landmarks": landmarks
                 })
         
@@ -200,6 +287,9 @@ def recognize_gesture():
             "gestures": gestures
         })
     except Exception as e:
+        print(f"Gesture recognition error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": f"Gesture recognition error: {str(e)}"}), 500
 
 @app.route('/analyze', methods=['POST'])
@@ -232,28 +322,44 @@ def analyze():
         
         # Gesture recognition
         gestures = []
-        if MEDIAPIPE_AVAILABLE and hands is not None:
+        if MEDIAPIPE_AVAILABLE and hand_landmarker is not None:
             try:
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                gesture_results = hands.process(img_rgb)
                 
-                if gesture_results.multi_hand_landmarks:
-                    for hand_landmarks, handedness in zip(gesture_results.multi_hand_landmarks, gesture_results.multi_handedness):
+                # Create MediaPipe Image
+                from mediapipe import Image as MPImage
+                mp_image = MPImage(image_format=mp.ImageFormat.SRGB, data=img_rgb)
+                
+                # Detect hand landmarks
+                detection_result = hand_landmarker.detect(mp_image)
+                
+                if detection_result.hand_landmarks:
+                    for hand_landmarks, handedness in zip(detection_result.hand_landmarks, detection_result.handedness):
                         landmarks = []
-                        for landmark in hand_landmarks.landmark:
+                        for landmark in hand_landmarks:
                             landmarks.append({
                                 "x": landmark.x,
                                 "y": landmark.y,
                                 "z": landmark.z
                             })
                         
+                        # Detect gesture type
+                        gesture_type = detect_gesture_type(landmarks)
+                        
+                        # Convert hand label to Chinese
+                        hand_label = handedness[0].category_name
+                        hand_chinese = "右手" if hand_label == "Right" else "左手"
+                        
                         gestures.append({
-                            "hand": handedness.classification[0].label,
-                            "confidence": float(handedness.classification[0].score),
+                            "hand": hand_chinese,
+                            "gesture": gesture_type,
+                            "confidence": float(handedness[0].score),
                             "landmarks": landmarks
                         })
             except Exception as e:
                 print(f"Gesture recognition error: {e}")
+                import traceback
+                traceback.print_exc()
                 # Continue with object detection results even if gesture recognition fails
         
         return jsonify({
