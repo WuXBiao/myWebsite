@@ -9,6 +9,96 @@ app = Flask(__name__)
 # Using large model for highest accuracy (yolov8l.pt)
 yolo_model = YOLO('yolov8l.pt')
 
+# Chinese translation dictionary for COCO classes
+CHINESE_NAMES = {
+    'person': '人',
+    'bicycle': '自行车',
+    'car': '汽车',
+    'motorcycle': '摩托车',
+    'airplane': '飞机',
+    'bus': '公交车',
+    'train': '火车',
+    'truck': '卡车',
+    'boat': '船',
+    'traffic light': '红绿灯',
+    'fire hydrant': '消防栓',
+    'stop sign': '停止标志',
+    'parking meter': '停车计时器',
+    'bench': '长椅',
+    'cat': '猫',
+    'dog': '狗',
+    'horse': '马',
+    'sheep': '羊',
+    'cow': '牛',
+    'elephant': '大象',
+    'bear': '熊',
+    'zebra': '斑马',
+    'giraffe': '长颈鹿',
+    'backpack': '背包',
+    'umbrella': '伞',
+    'handbag': '手提包',
+    'tie': '领带',
+    'suitcase': '行李箱',
+    'frisbee': '飞盘',
+    'skis': '滑雪板',
+    'snowboard': '滑雪板',
+    'sports ball': '运动球',
+    'kite': '风筝',
+    'baseball bat': '棒球棒',
+    'baseball glove': '棒球手套',
+    'skateboard': '滑板',
+    'surfboard': '冲浪板',
+    'tennis racket': '网球拍',
+    'bottle': '瓶子',
+    'wine glass': '葡萄酒杯',
+    'cup': '杯子',
+    'fork': '叉子',
+    'knife': '刀',
+    'spoon': '勺子',
+    'bowl': '碗',
+    'banana': '香蕉',
+    'apple': '苹果',
+    'sandwich': '三明治',
+    'orange': '橙子',
+    'broccoli': '西兰花',
+    'carrot': '胡萝卜',
+    'hot dog': '热狗',
+    'pizza': '披萨',
+    'donut': '甜甜圈',
+    'cake': '蛋糕',
+    'chair': '椅子',
+    'couch': '沙发',
+    'potted plant': '盆栽',
+    'bed': '床',
+    'dining table': '餐桌',
+    'toilet': '马桶',
+    'tv': '电视',
+    'laptop': '笔记本电脑',
+    'mouse': '鼠标',
+    'remote': '遥控器',
+    'keyboard': '键盘',
+    'microwave': '微波炉',
+    'oven': '烤箱',
+    'toaster': '烤面包机',
+    'sink': '水槽',
+    'refrigerator': '冰箱',
+    'book': '书',
+    'clock': '时钟',
+    'vase': '花瓶',
+    'scissors': '剪刀',
+    'teddy bear': '泰迪熊',
+    'hair drier': '吹风机',
+    'toothbrush': '牙刷',
+    'pen': '笔',
+    'pencil': '铅笔',
+    'marker': '记号笔'
+}
+
+def get_chinese_name(english_name):
+    """Convert English class name to Chinese"""
+    english_lower = english_name.lower()
+    return CHINESE_NAMES.get(english_lower, english_name)
+
 # MediaPipe initialization (optional)
 MEDIAPIPE_AVAILABLE = False
 hands = None
@@ -52,8 +142,10 @@ def detect():
     detections = []
     for result in results:
         for box in result.boxes:
+            english_name = yolo_model.names[int(box.cls)]
+            chinese_name = get_chinese_name(english_name)
             detections.append({
-                "class": yolo_model.names[int(box.cls)],
+                "class": chinese_name,
                 "confidence": float(box.conf),
                 "bbox": box.xyxy.tolist()[0]
             })
@@ -130,8 +222,10 @@ def analyze():
         detections = []
         for result in yolo_results:
             for box in result.boxes:
+                english_name = yolo_model.names[int(box.cls)]
+                chinese_name = get_chinese_name(english_name)
                 detections.append({
-                    "class": yolo_model.names[int(box.cls)],
+                    "class": chinese_name,
                     "confidence": float(box.conf),
                     "bbox": box.xyxy.tolist()[0]
                 })
