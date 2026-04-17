@@ -43,20 +43,32 @@ public class ExportService {
         
         // 生成 Workbook
         Workbook workbook = ExcelExportUtil.exportExcel(exportParams, entityList, exportList);
-        System.out.println("调用exportExcel后，exportList大小: " + exportList.size() + ", 副本大小: " + exportListCopy.size());
-        
+        System.out.println("调用 exportExcel 后，exportList 大小：" + exportList.size() + ", 副本大小：" + exportListCopy.size());
+                
         Sheet sheet = workbook.getSheetAt(0);
-
+        
+        // 1. 获取标题行并设置高度
         Row titleRow = sheet.getRow(0);
         if (titleRow == null) {
             titleRow = sheet.createRow(0);
         }
         titleRow.setHeightInPoints(28f);
+                
+        // 2. 使用 shiftRows 一次性将所有行下移一行（从第 1 行开始）
+        // 参数：startRow, endRow, nRows（正数向下移动）
+        sheet.shiftRows(1, sheet.getLastRowNum(), 1);
+                
+        // 3. 在第 1 行（索引 1）创建自定义内容行
+        Row customRow = sheet.createRow(1);
+        customRow.setHeightInPoints(20f);
+                
+        // 4. 设置自定义行内容和样式
+        setupCustomRow(customRow, sheet, workbook, period);
         
-        // 合并表头A2和B2单元格，命名为"指标"
-        Row headerRow = sheet.getRow(1); // 第2行（索引为1）
+        // 合并表头 A3 和 B3 单元格，命名为"指标"（现在在第 2 行，索引为 2）
+        Row headerRow = sheet.getRow(2); // 第 3 行（索引为 2）
         if (headerRow == null) {
-            headerRow = sheet.createRow(1);
+            headerRow = sheet.createRow(2);
         }
         
         // 确保A2和B2单元格存在
@@ -552,11 +564,112 @@ public class ExportService {
         }
     }
 
+    /**
+     * 调整列宽
+     */
     private void adjustColumnWidths(Sheet sheet) {
         int[] widths = {4500, 8000, 3500, 3500, 3500, 3500, 3500, 3500, 3000, 3500, 3500, 8000};
         for (int i = 0; i < widths.length; i++) {
             sheet.setColumnWidth(i, widths[i]);
         }
+    }
+    
+    /**
+     * 在标题行和表头行之间插入自定义内容行
+     * 
+     * @param sheet Excel Sheet
+     * @param workbook Excel Workbook
+     * @param period 期间参数（如：2024 年 11 月）
+     */
+    private void insertCustomRow(Sheet sheet, Workbook workbook, String period) {
+        // 创建第 1 行（索引为 1）
+        Row customRow = sheet.getRow(1);
+        if (customRow == null) {
+            customRow = sheet.createRow(1);
+        }
+        
+        // 设置行高
+        customRow.setHeightInPoints(20f);
+        
+        // 创建合并单元格区域（A2 到 L2，即第 0-11 列）
+        CellRangeAddress mergeRegion = new CellRangeAddress(1, 1, 0, 11);
+        sheet.addMergedRegion(mergeRegion);
+        
+        // 创建单元格并设置值
+        Cell cell = customRow.createCell(0);
+        
+        // 自定义内容：可以包含期间、制表人、备注等信息
+        String customText = buildCustomText(period);
+        cell.setCellValue(customText);
+        
+        // 设置样式
+        CellStyle customStyle = workbook.createCellStyle();
+        customStyle.setAlignment(HorizontalAlignment.LEFT); // 左对齐
+        customStyle.setVerticalAlignment(VerticalAlignment.CENTER); // 垂直居中
+        
+        // 设置字体
+        Font font = workbook.createFont();
+        font.setFontHeightInPoints((short) 10); // 字体大小
+        font.setColor(IndexedColors.GREY_50_PERCENT.getIndex()); // 灰色字体
+        customStyle.setFont(font);
+        
+        cell.setCellStyle(customStyle);
+    }
+    
+    /**
+     * 设置自定义行内容和样式
+     * 
+     * @param customRow 自定义行
+     * @param sheet Excel Sheet
+     * @param workbook Excel Workbook
+     * @param period 期间参数
+     */
+    private void setupCustomRow(Row customRow, Sheet sheet, Workbook workbook, String period) {
+        // 创建合并单元格区域（A2 到 L2，即第 0-11 列）
+        CellRangeAddress mergeRegion = new CellRangeAddress(1, 1, 0, 11);
+        sheet.addMergedRegion(mergeRegion);
+        
+        // 创建单元格并设置值
+        Cell cell = customRow.createCell(0);
+        
+        // 自定义内容：可以包含期间、制表人、备注等信息
+        String customText = buildCustomText(period);
+        cell.setCellValue(customText);
+        
+        // 设置样式
+        CellStyle customStyle = workbook.createCellStyle();
+        customStyle.setAlignment(HorizontalAlignment.LEFT); // 左对齐
+        customStyle.setVerticalAlignment(VerticalAlignment.CENTER); // 垂直居中
+        
+        // 设置字体
+        Font font = workbook.createFont();
+        font.setFontHeightInPoints((short) 10); // 字体大小
+        font.setColor(IndexedColors.GREY_50_PERCENT.getIndex()); // 灰色字体
+        customStyle.setFont(font);
+        
+        cell.setCellStyle(customStyle);
+    }
+    
+    /**
+     * 构建自定义文本内容
+     * 可以根据业务需求自定义显示内容
+     * 
+     * @param period 期间
+     * @return 自定义文本
+     */
+    private String buildCustomText(String period) {
+        StringBuilder sb = new StringBuilder();
+        
+        // 示例：显示期间信息
+        if (period != null && !period.trim().isEmpty()) {
+            sb.append("统计期间：").append(period);
+        }
+        
+        // 可以继续添加其他信息，例如：
+        // sb.append("  |  制表人：张三");
+        // sb.append("  |  备注：本数据仅供参考");
+        
+        return sb.toString();
     }
 
     /**
