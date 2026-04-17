@@ -52,6 +52,47 @@
       <h3>Last Snapshot</h3>
       <img :src="snapshot" alt="Snapshot" class="snapshot-image" />
       <el-button @click="downloadSnapshot">Download</el-button>
+      
+      <div v-if="searchResults" class="snapshot-search-results">
+        <h4>Image Analysis Results</h4>
+        
+        <div v-if="searchResults.data" class="analysis-results">
+          <!-- Objects detected in image -->
+          <div v-if="searchResults.data.objects && searchResults.data.objects.length > 0" class="detected-objects">
+            <h5>Objects Detected in Image:</h5>
+            <div v-for="(obj, idx) in searchResults.data.objects" :key="`detected-${idx}`" class="object-card">
+              <div class="object-header">
+                <span class="object-name">{{ obj.name }}</span>
+                <span class="confidence-badge">{{ (obj.confidence * 100).toFixed(1) }}%</span>
+              </div>
+              
+              <div v-if="obj.baike" class="baike-section">
+                <h6>{{ obj.baike.title }}</h6>
+                <p class="baike-description">{{ obj.baike.description }}</p>
+                <el-link :href="obj.baike.url" target="_blank" type="primary" size="small">
+                  View on Baidu Baike →
+                </el-link>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Image source info -->
+          <div v-if="searchResults.data.source" class="image-source-section">
+            <h5>Image Source Analysis:</h5>
+            <div class="source-info">
+              <p><strong>Status:</strong> {{ searchResults.data.source.message }}</p>
+              <p class="source-note">{{ searchResults.data.source.note }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div v-else class="search-loading">
+          <el-icon class="is-loading">
+            <Loading />
+          </el-icon>
+          <span>Analyzing image...</span>
+        </div>
+      </div>
     </div>
 
     <div v-if="aiResults" class="ai-results">
@@ -73,6 +114,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -80,6 +122,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Loading } from '@element-plus/icons-vue'
 import request from '../utils/request'
 
 const route = useRoute()
@@ -96,6 +139,7 @@ const aiEnabled = ref(false)
 const aiResults = ref<any>(null)
 const canvasWidth = ref(1280)
 const canvasHeight = ref(720)
+const searchResults = ref<any>(null)
 let stream: MediaStream | null = null
 let aiIntervalId: number | null = null
 
@@ -167,7 +211,7 @@ const stopCamera = () => {
   ElMessage.info('Camera stopped')
 }
 
-const takeSnapshot = () => {
+const takeSnapshot = async () => {
   if (!videoElement.value || !cameraActive.value) {
     ElMessage.warning('Camera is not active')
     return
@@ -182,6 +226,9 @@ const takeSnapshot = () => {
     ctx.drawImage(videoElement.value, 0, 0)
     snapshot.value = canvas.toDataURL('image/jpeg')
     ElMessage.success('Snapshot taken')
+    
+    // Auto search for snapshot content
+    await searchSnapshotContent(canvas)
   }
 }
 
@@ -363,6 +410,34 @@ const drawResults = (ctx: CanvasRenderingContext2D, results: any) => {
   }
 }
 
+const searchSnapshotContent = async (canvas: HTMLCanvasElement) => {
+  try {
+    searchResults.value = null
+    
+    // Convert canvas to blob and search for image source
+    canvas.toBlob(async (blob) => {
+      if (!blob) return
+      
+      const formData = new FormData()
+      formData.append('image', blob, 'snapshot.jpg')
+      
+      try {
+        const response = await request.post('/ai/search-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        
+        searchResults.value = response.data || response
+      } catch (error) {
+        console.error('Image source search error:', error)
+      }
+    }, 'image/jpeg', 0.8)
+  } catch (error) {
+    console.error('Snapshot search error:', error)
+  }
+}
+
 const goBack = () => {
   stopCamera()
   stopAI()
@@ -440,6 +515,114 @@ const goBack = () => {
   border-radius: 4px;
 }
 
+.snapshot-search-results {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f0f9ff;
+  border-left: 4px solid #409eff;
+  border-radius: 4px;
+}
+
+.snapshot-search-results h4 {
+  margin-top: 0;
+  color: #409eff;
+  margin-bottom: 15px;
+}
+
+.analysis-results {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.detected-objects h5,
+.image-source-section h5 {
+  margin: 0 0 10px 0;
+  color: #303133;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.object-card {
+  background-color: #fff;
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 3px solid #67c23a;
+  margin-bottom: 10px;
+}
+
+.object-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.object-name {
+  font-weight: 600;
+  color: #303133;
+  font-size: 14px;
+}
+
+.confidence-badge {
+  background-color: #f0f9ff;
+  color: #409eff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.baike-section {
+  padding-top: 10px;
+  border-top: 1px solid #ebeef5;
+}
+
+.baike-section h6 {
+  margin: 0 0 8px 0;
+  color: #67c23a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.baike-description {
+  margin: 8px 0;
+  color: #606266;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.image-source-section {
+  background-color: #fff;
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 3px solid #e6a23c;
+}
+
+.source-info p {
+  margin: 8px 0;
+  color: #606266;
+  font-size: 12px;
+}
+
+.source-info strong {
+  color: #303133;
+}
+
+.source-note {
+  color: #909399;
+  font-style: italic;
+}
+
+.search-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  color: #909399;
+}
+
 .ai-results {
   margin-top: 30px;
   padding: 20px;
@@ -494,4 +677,5 @@ const goBack = () => {
   color: #909399;
   font-size: 12px;
 }
+
 </style>

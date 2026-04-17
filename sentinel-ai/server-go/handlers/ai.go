@@ -149,3 +149,59 @@ func RecognizeGesture(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+// SearchObject searches for object information using Baidu Baike
+func SearchObject(c *gin.Context) {
+	var req struct {
+		ObjectName string `json:"object_name" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Object name is required"})
+		return
+	}
+
+	// Create request to AI service
+	body := new(bytes.Buffer)
+	json.NewEncoder(body).Encode(map[string]string{"object_name": req.ObjectName})
+
+	aiReq, err := http.NewRequest("POST", AIServiceURL+"/search-object", body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+		return
+	}
+
+	aiReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpClient.Do(aiReq)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to AI service"})
+		return
+	}
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// SearchImageSource searches for image source information
+func SearchImageSource(c *gin.Context) {
+	imageData, err := getImageFromRequest(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	result, err := sendToAIService(imageData, "/search-image-source")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}

@@ -2,6 +2,9 @@ from flask import Flask, jsonify, request
 import cv2
 import numpy as np
 from ultralytics import YOLO
+import requests
+from urllib.parse import quote
+import json
 
 app = Flask(__name__)
 
@@ -297,6 +300,131 @@ def analyze():
         })
     except Exception as e:
         return jsonify({"error": f"Analysis error: {str(e)}"}), 500
+
+def search_baidu_baike(query):
+    """Search Baidu Baike for information about a query"""
+    try:
+        # Try Baidu Baike API endpoint
+        url = "https://baike.baidu.com/api/openapi/BaikeLemmaPageV2"
+        params = {
+            "lemma": query,
+            "format": "json"
+        }
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        
+        response = requests.get(url, params=params, headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("data"):
+                baike_data = data["data"]
+                return {
+                    "title": baike_data.get("lemmaTitle", query),
+                    "description": baike_data.get("lemmaAbstract", ""),
+                    "url": f"https://baike.baidu.com/item/{quote(query)}",
+                    "source": "baike"
+                }
+    except Exception as e:
+        print(f"Baidu Baike API error: {e}")
+    
+    # Fallback: Return Baidu Baike URL for manual search
+    return {
+        "title": query,
+        "description": "Click the link below to view information on Baidu Baike",
+        "url": f"https://baike.baidu.com/item/{quote(query)}",
+        "source": "baike_url"
+    }
+
+def search_image_source_and_objects(image_data):
+    """Search for image source and detect objects in the image"""
+    try:
+        # Decode image
+        nparr = np.frombuffer(image_data, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            return None
+        
+        # Detect objects in the image
+        results = yolo_model(img, conf=0.45, iou=0.4)
+        detected_objects = []
+        
+        for result in results:
+            for box in result.boxes:
+                english_name = yolo_model.names[int(box.cls)]
+                chinese_name = get_chinese_name(english_name)
+                confidence = float(box.conf)
+                
+                # Get Baidu Baike info for each detected object
+                baike_info = search_baidu_baike(chinese_name)
+                
+                detected_objects.append({
+                    "name": chinese_name,
+                    "english_name": english_name,
+                    "confidence": confidence,
+                    "baike": baike_info
+                })
+        
+        # Try to find image source using TinEye API or similar
+        # For now, we'll use a placeholder that indicates the image was analyzed
+        image_source_info = {
+            "status": "analyzed",
+            "message": "Image analyzed successfully",
+            "note": "Use reverse image search tools like TinEye or Google Images for source"
+        }
+        
+        return {
+            "objects": detected_objects,
+            "source": image_source_info
+        }
+    except Exception as e:
+        print(f"Image search error: {e}")
+    
+    return None
+
+@app.route('/search-object', methods=['POST'])
+def search_object():
+    """Search for object information using Baidu Baike"""
+    if 'object_name' not in request.json:
+        return jsonify({"error": "No object name provided"}), 400
+    
+    object_name = request.json['object_name']
+    
+    baike_info = search_baidu_baike(object_name)
+    
+    if baike_info:
+        return jsonify({
+            "message": "Search successful",
+            "baike": baike_info
+        })
+    else:
+        return jsonify({
+            "message": "No information found",
+            "baike": None
+        })
+
+@app.route('/search-image-source', methods=['POST'])
+def search_image_source_endpoint():
+    """Search for image source and detect objects with Baike info"""
+    if 'image' not in request.files:
+        return jsonify({"error": "No image provided"}), 400
+    
+    file = request.files['image']
+    img_bytes = file.read()
+    
+    result = search_image_source_and_objects(img_bytes)
+    
+    if result:
+        return jsonify({
+            "message": "Image analysis successful",
+            "data": result
+        })
+    else:
+        return jsonify({
+            "error": "Failed to analyze image"
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)

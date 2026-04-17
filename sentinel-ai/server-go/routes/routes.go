@@ -33,6 +33,10 @@ func SetupRoutes(r *gin.Engine) {
 		protected.POST("/ai/analyze", handlers.AnalyzeFrame)
 		protected.POST("/ai/detect", handlers.DetectObjects)
 		protected.POST("/ai/gesture", handlers.RecognizeGesture)
+
+		// Search routes
+		protected.POST("/ai/search-object", handlers.SearchObject)
+		protected.POST("/ai/search-image", handlers.SearchImageSource)
 	}
 
 	// Stream routes (WebSocket)
